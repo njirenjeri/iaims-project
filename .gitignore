@@ -1,0 +1,14 @@
+# Local environment secrets
+.env
+.env.*
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/

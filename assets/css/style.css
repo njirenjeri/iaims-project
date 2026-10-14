@@ -1,0 +1,82 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+*{
+    margin: 0;
+    padding: 0;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Authentication card: Bootstrap handles the remaining layout. */
+.auth-card {
+    width: 100%;
+    max-width: 410px;
+}
+
+/* Official Coat of Arms image. */
+.coat-of-arms {
+    width: 76px;
+    height: 76px;
+    object-fit: contain;
+}
+
+/* Gold divider extends across the card, ignoring inner padding. */
+.gold-divider {
+    height: 3px;
+    margin: 0;
+    border: 0;
+    background-color: #c5a044;
+    opacity: 1;
+}
+
+/* Subtle government heading. */
+.republic-heading {
+    letter-spacing: 0.16rem;
+}
+
+/* Government-style primary button and links. */
+#submitButton {
+    background-color: #14213d;
+    border-color: #14213d;
+}
+
+#submitButton:hover {
+    background-color: #0e182d;
+    border-color: #0e182d;
+}
+
+#forgotPasswordLink,
+#toggleAuth {
+    color: #987522;
+}
+
+#forgotPasswordLink:hover,
+#toggleAuth:hover {
+    color: #715619;
+}
+
+/* Keep the password eye buttons visually consistent with the inputs. */
+[data-password-toggle] {
+    background-color: #fff;
+    border-color: #14213d;
+    border-left: none;
+    transition: all ease-in .3ms;
+}
+
+[data-password-toggle]:hover {
+    background-color: #f8f9fa;
+    color: #0e182d;
+}
+
+/* Feedback for password requirements and confirmation. */
+.password-rule {
+    margin-bottom: 0.3rem;
+    color: #b02a37;
+}
+
+.password-match {
+    color: #198754;
+}
+
+.password-mismatch {
+    color: #b02a37;
+}
