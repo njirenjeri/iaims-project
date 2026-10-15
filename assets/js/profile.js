@@ -14,6 +14,31 @@ document.addEventListener("DOMContentLoaded", () => {
     const locationLookupStatus = document.getElementById("locationLookupStatus");
     const locationDataUrl = "https://raw.githubusercontent.com/alvinchesaro/Kenya-Counties-SubCounties-and-Wards/main/Kenya-Counties-SubCounties-and-Wards.json";
     let constituenciesByCounty = {};
+    const nairobiConstituencies = [
+        "Dagoretti North", "Dagoretti South", "Embakasi Central", "Embakasi East",
+        "Embakasi North", "Embakasi South", "Embakasi West", "Kamukunji",
+        "Kasarani", "Kibra", "Lang'ata", "Makadara", "Mathare", "Roysambu",
+        "Ruaraka", "Starehe", "Westlands",
+    ];
+    const nairobiWardsByConstituency = {
+        "Dagoretti North": ["Kilimani", "Kawangware", "Gatina", "Kileleshwa", "Kabiro"],
+        "Dagoretti South": ["Mutu-ini", "Ngando", "Riruta", "Uthiru/Ruthimitu", "Waithaka"],
+        "Embakasi Central": ["Kayole North", "Kayole Central", "Kayole South", "Komarock", "Matopeni/Spring Valley"],
+        "Embakasi East": ["Upper Savannah", "Lower Savannah", "Embakasi", "Utawala", "Mihango"],
+        "Embakasi North": ["Kariobangi North", "Dandora Area I", "Dandora Area II", "Dandora Area III", "Dandora Area IV"],
+        "Embakasi South": ["Imara Daima", "Kwa Njenga", "Kwa Reuben", "Pipeline", "Kware"],
+        "Embakasi West": ["Umoja I", "Umoja II", "Mowlem", "Kariobangi South", "Maringo/Hamza"],
+        "Kamukunji": ["Eastleigh South", "Airbase", "California", "Ngara", "Nairobi Central"],
+        "Kasarani": ["Clay City", "Mwiki", "Kasarani", "Njiru", "Ruai"],
+        "Kibra": ["Laini Saba", "Lindi", "Makina", "Woodley/Kenyatta Golf Course", "Sarang'ombe"],
+        "Lang'ata": ["Karen", "Nairobi West", "Mugumoini", "South C", "Nyayo Highrise"],
+        "Makadara": ["Viwandani", "Harambee", "Makongeni", "Pumwani", "Eastleigh North"],
+        "Mathare": ["Mabatini", "Huruma", "Ngei", "Mlango Kubwa", "Kiamaiko"],
+        "Roysambu": ["Githurai", "Kahawa West", "Zimmerman", "Roysambu", "Kahawa"],
+        "Ruaraka": ["Baba Dogo", "Utalii", "Mathare North", "Lucky Summer", "Korogocho"],
+        "Starehe": ["Pangani", "Ziwani/Kariokor", "Landimawe", "Nairobi South", "Hospital"],
+        "Westlands": ["Kitisuru", "Parklands/Highridge", "Karura", "Kangemi", "Mountain View"],
+    };
 
     function updateIdentityLabel() {
         const isPassport = identityType.value === "passport";
@@ -59,6 +84,14 @@ document.addEventListener("DOMContentLoaded", () => {
         return matchingKey ? constituenciesByCounty[matchingKey] : null;
     }
 
+    function findConstituencyWards(countyData, constituencyName) {
+        if (!countyData || typeof countyData !== "object") return null;
+        const matchingKey = Object.keys(countyData).find(
+            (name) => normalizeCountyName(name) === normalizeCountyName(constituencyName)
+        );
+        return matchingKey ? countyData[matchingKey] : null;
+    }
+
     function resetSelect(select, placeholder) {
         select.replaceChildren(new Option(placeholder, ""));
         select.value = "";
@@ -68,7 +101,10 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateConstituencies(keepSelection = false) {
         const selectedValue = keepSelection ? constituencySelect.dataset.selected : "";
         const countyData = findCountyData(countySelect.value);
-        const names = countyData && typeof countyData === "object" ? Object.keys(countyData) : [];
+        const isNairobi = normalizeCountyName(countySelect.value) === "nairobi";
+        const names = isNairobi
+            ? nairobiConstituencies
+            : countyData && typeof countyData === "object" ? Object.keys(countyData) : [];
 
         resetSelect(constituencySelect, names.length ? "Select constituency" : "No constituencies available");
         resetSelect(wardSelect, "Select a constituency first");
@@ -86,7 +122,10 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateWards(keepSelection = false) {
         const selectedValue = keepSelection ? wardSelect.dataset.selected : "";
         const countyData = findCountyData(countySelect.value);
-        const wards = countyData?.[constituencySelect.value];
+        const isNairobi = normalizeCountyName(countySelect.value) === "nairobi";
+        const wards = isNairobi
+            ? nairobiWardsByConstituency[constituencySelect.value]
+            : findConstituencyWards(countyData, constituencySelect.value);
         const wardNames = Array.isArray(wards) ? wards : [];
 
         resetSelect(wardSelect, wardNames.length ? "Select ward" : "No wards available");
@@ -134,7 +173,14 @@ document.addEventListener("DOMContentLoaded", () => {
             locationLookupStatus.textContent = "Select your county, then choose your constituency and ward.";
             updateConstituencies(true);
         } catch (error) {
-            locationLookupStatus.textContent = "Could not load the constituency and ward list. Check your internet connection and reload the page.";
+            const isNairobi = normalizeCountyName(countySelect.value) === "nairobi";
+            locationLookupStatus.textContent = isNairobi
+                ? "Nairobi constituencies are available, but the ward list could not load. Check your internet connection to select a ward."
+                : "Could not load the constituency and ward list. Check your internet connection and reload the page.";
+            if (isNairobi) {
+                updateConstituencies();
+                return;
+            }
             resetSelect(constituencySelect, "Location list unavailable");
             resetSelect(wardSelect, "Location list unavailable");
             updateCompletion();
