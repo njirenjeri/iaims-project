@@ -1,31 +1,49 @@
-<!-- enetry point -->
- <?php
-//  start session
-session_start();
+<?php
 
 require_once __DIR__ . '/config/app.php';
 
-// define the pages that visitors are allowed to request
+// Harden the session cookie before the session starts.
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/',
+    'secure' => !empty($_SERVER['HTTPS']),
+    'httponly' => true,
+    'samesite' => 'Lax',
+]);
+session_start();
 
-$routes = [
+// Pages anyone can open.
+$publicRoutes = [
     'login' => __DIR__ . '/pages/login.php',
-    'register' => __DIR__ . '/pages/register.php',
-    'dashboard' => __DIR__ . '/pages/dashboard.php',
+    'forgot-password' => __DIR__ . '/pages/forgot-password.php',
+    'reset-password' => __DIR__ . '/pages/reset-password.php',
+];
 
+// Pages that require a signed-in user.
+$protectedRoutes = [
+    'dashboard' => __DIR__ . '/pages/dashboard.php',
     'profile' => __DIR__ . '/pages/student/profile.php',
     'qualifications' => __DIR__ . '/pages/student/qualifications.php',
     'applications' => __DIR__ . '/pages/student/applications.php',
+];
 
-    ];
-    // get the requested file else direct to login page
-    $page = $_GET['page'] ?? 'login';
+$page = $_GET['page'] ?? 'login';
 
-    // only load pages that exist in the route
-    if (!array_key_exists($page, $routes)) {
-        http_response_code(404);
-        exit('Page Not Found');
+if (!is_string($page)) {
+    $page = 'login';
+}
+
+if (isset($publicRoutes[$page])) {
+    $file = $publicRoutes[$page];
+} elseif (isset($protectedRoutes[$page])) {
+    if (empty($_SESSION['user_id'])) {
+        header('Location: ' . BASE_URL . '/?page=login');
+        exit;
     }
+    $file = $protectedRoutes[$page];
+} else {
+    http_response_code(404);
+    exit('Page not found');
+}
 
-    // load requested
-    require $routes[$page];
- ?>
+require $file;
