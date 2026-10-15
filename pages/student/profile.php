@@ -15,7 +15,6 @@ $counties = [
 
 $profile = [
     'first_name' => '',
-    'last_name' => '',
     'other_names' => '',
     'email' => '',
     'date_of_birth' => '',
@@ -74,24 +73,10 @@ $profile = [
             <section class="card profile-card mb-4" aria-labelledby="personal-heading">
                 <div class="card-header profile-card-header">
                     <span class="section-icon"><i class="bi bi-person-vcard" aria-hidden="true"></i></span>
-                    <div><h2 class="h5 mb-1" id="personal-heading">Personal details</h2><p class="small text-secondary mb-0">Your name and contact information</p></div>
+                    <div><h2 class="h5 mb-1" id="personal-heading">Personal details</h2><p class="small text-secondary mb-0">Your identity and contact information</p></div>
                 </div>
                 <div class="card-body p-3 p-md-4">
                     <div class="row g-3">
-                        <div class="col-md-4">
-                            <label for="first_name" class="form-label">First name <span class="text-danger">*</span></label>
-                            <input class="form-control" id="first_name" name="first_name" value="<?= escapeHtml($profile['first_name']) ?>" autocomplete="given-name" maxlength="100" required>
-                            <div class="invalid-feedback">Enter your first name.</div>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="last_name" class="form-label">Last name <span class="text-danger">*</span></label>
-                            <input class="form-control" id="last_name" name="last_name" value="<?= escapeHtml($profile['last_name']) ?>" autocomplete="family-name" maxlength="100" required>
-                            <div class="invalid-feedback">Enter your last name.</div>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="other_names" class="form-label">Other name(s)</label>
-                            <input class="form-control" id="other_names" name="other_names" value="<?= escapeHtml($profile['other_names']) ?>" autocomplete="additional-name" maxlength="150">
-                        </div>
                         <div class="col-md-6">
                             <label for="identity_type" class="form-label">Identity document <span class="text-danger">*</span></label>
                             <select class="form-select" id="identity_type" name="identity_type" required>
@@ -105,10 +90,13 @@ $profile = [
                             <div class="invalid-feedback">Enter a valid National ID number starting with a digit.</div>
                         </div>
                         <div class="col-md-6">
-                            <label for="phone_number" class="form-label">Phone number <span class="text-danger">*</span></label>
-                            <input type="tel" class="form-control" id="phone_number" name="phone_number" value="<?= escapeHtml($profile['phone_number']) ?>" placeholder="e.g. +254 712 345 678" autocomplete="tel" maxlength="30" pattern="(?:[+0-9. ]|\(|\)|-){7,30}" required>
-                            <div class="form-text">Include your country code where applicable.</div>
-                            <div class="invalid-feedback">Enter a valid phone number.</div>
+                            <label for="first_name" class="form-label">First name <span class="text-danger">*</span></label>
+                            <input class="form-control" id="first_name" name="first_name" value="<?= escapeHtml($profile['first_name']) ?>" autocomplete="given-name" maxlength="100" required>
+                            <div class="invalid-feedback">Enter your first name.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="other_names" class="form-label">Other name(s)</label>
+                            <input class="form-control" id="other_names" name="other_names" value="<?= escapeHtml($profile['other_names']) ?>" autocomplete="additional-name" maxlength="150">
                         </div>
                         <div class="col-md-6">
                             <label for="nationality" class="form-label">Nationality <span class="text-danger">*</span></label>
@@ -124,6 +112,18 @@ $profile = [
                                 <?php endforeach; ?>
                             </select>
                             <div class="invalid-feedback">Select a gender option.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="phone_number" class="form-label">Phone number <span class="text-danger">*</span></label>
+                            <input type="tel" class="form-control" id="phone_number" name="phone_number" value="<?= escapeHtml($profile['phone_number']) ?>" placeholder="e.g. +254 712 345 678" autocomplete="tel" maxlength="30" pattern="(?:[+0-9. ]|\(|\)|-){7,30}" required>
+                            <div class="form-text">Include your country code where applicable.</div>
+                            <div class="invalid-feedback">Enter a valid phone number.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="alternative_number" class="form-label">Alternative phone number</label>
+                            <input type="tel" class="form-control" id="alternative_number" name="alternative_number" placeholder="e.g. +254 722 345 678" autocomplete="tel" maxlength="30" pattern="(?:[+0-9. ]|\(|\)|-){7,30}">
+                            <div class="form-text">Optional backup contact number.</div>
+                            <div class="invalid-feedback">Enter a valid alternative phone number.</div>
                         </div>
                     </div>
                 </div>
@@ -168,8 +168,7 @@ $profile = [
                 </div>
             </section>
 
-            <div class="profile-form-footer d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
-                <p class="small text-secondary mb-0"><i class="bi bi-info-circle me-1" aria-hidden="true"></i>Frontend preview only: your profile is not submitted or saved.</p>
+            <div class="d-flex justify-content-end">
                 <button type="submit" class="btn btn-profile-save btn-lg px-4">
                     <i class="bi bi-check2-circle me-2" aria-hidden="true"></i>Save profile
                 </button>
@@ -179,6 +178,6 @@ $profile = [
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="<?= escapeHtml(BASE_URL) ?>/assets/js/profile.js"></script>
+    <script src="<?= escapeHtml(BASE_URL) ?>/assets/js/profile.js?v=<?= (int) filemtime(__DIR__ . '/../../assets/js/profile.js') ?>"></script>
 </body>
 </html>
