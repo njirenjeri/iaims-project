@@ -1,11 +1,15 @@
 <?php
-//  name displayed accross application
- define('APP_NAME', 'Industrial Attachment Information Management System');
 
-// base path
-  define('BASE_URL', '/iaims-project');
+define('APP_NAME', 'Industrial Attachment Information Management System');
+define('APP_ENV', 'development'); // 'development' or 'production'
 
-//   use appropriate timezone
-   date_default_timezone_set('Africa/Nairobi');
+define('BASE_URL', '/iaims-project');
+// Absolute URL used in emails. Not build this from $_SERVER['HTTP_HOST'] (host header injection).
+define('APP_URL', 'http://localhost' . BASE_URL);
 
-?>
+define('MAIL_FROM', 'no-reply@example.com');
+define('PASSWORD_RESET_TTL_MINUTES', 30);
+define('PASSWORD_RESET_COOLDOWN_SECONDS', 60);
+
+ini_set('display_errors', APP_ENV === 'development' ? '1' : '0');
+date_default_timezone_set('Africa/Nairobi');
