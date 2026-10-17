@@ -219,7 +219,7 @@
     background: #fff;
 }
 
-/* Let the submission note wrap before it can push the button off-screen. */
+
 .profile-form-footer > p {
     flex: 1 1 18rem;
     min-width: 0;
@@ -241,6 +241,10 @@
     border-color: #0e182d;
     background: #0e182d;
     color: #fff;
+}
+
+button{
+    text-transform: capitalize;
 }
 
 @media (max-width: 575.98px) {

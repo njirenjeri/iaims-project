@@ -15,6 +15,7 @@ session_start();
 // Pages anyone can open.
 $publicRoutes = [
     'login' => __DIR__ . '/pages/login.php',
+    'logout' => __DIR__ . '/pages/logout.php',
     'forgot-password' => __DIR__ . '/pages/forgot-password.php',
     'reset-password' => __DIR__ . '/pages/reset-password.php',
 ];

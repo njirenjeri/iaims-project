@@ -11,5 +11,8 @@ define('MAIL_FROM', 'no-reply@example.com');
 define('PASSWORD_RESET_TTL_MINUTES', 30);
 define('PASSWORD_RESET_COOLDOWN_SECONDS', 60);
 
+define('STORAGE_PATH', __DIR__ . '/../storage');
+define('MAX_UPLOAD_BYTES', 10 * 1024 * 1024);
+
 ini_set('display_errors', APP_ENV === 'development' ? '1' : '0');
 date_default_timezone_set('Africa/Nairobi');
