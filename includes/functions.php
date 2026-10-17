@@ -356,10 +356,11 @@ function sendPasswordResetEmail(string $email, string $token): bool
 }
 
 // Render a dismissible Bootstrap alert that closes itself after a timeout.
-function renderAlert(string $type, string $message): string
+function renderAlert(string $type, string $message, ?int $timeout = null): string
 {
     $allowed = ['success', 'danger', 'warning', 'info'];
     $type = in_array($type, $allowed, true) ? $type : 'info';
+    $timeout ??= ($type === 'danger' ? 8000 : 5000);
 
 
     $timeout = $type === 'danger' ? 8000 : 5000;
@@ -373,4 +374,42 @@ function renderAlert(string $type, string $message): string
         $timeout,
         escapeHtml($message)
     );
+}
+
+// jumps to a section anchor
+function redirect(string $page, string $fragment = ''): void
+{
+    header('Location: ' . BASE_URL . '/?page=' . $page . ($fragment !== '' ? '#' . $fragment : ''));
+    exit;
+}
+
+// Only allow a signed-in user who holds the given role.
+function requireRole(string $role): void
+{
+    if (empty($_SESSION['user_id'])) {
+        redirect('login');
+    }
+
+    if (!in_array($role, $_SESSION['user_roles'] ?? [], true)) {
+        http_response_code(403);
+        exit('Access denied.');
+    }
+}
+
+// One-time message shown after a redirect.
+function setFlash(string $type, string $message): void
+{
+    $_SESSION['flash'] = ['type' => $type, 'message' => $message];
+}
+
+function renderFlash(): string
+{
+    if (empty($_SESSION['flash'])) {
+        return '';
+    }
+
+    $flash = $_SESSION['flash'];
+    unset($_SESSION['flash']);
+
+    return renderAlert($flash['type'], $flash['message']);
 }

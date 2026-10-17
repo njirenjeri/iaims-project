@@ -155,9 +155,4 @@ document.addEventListener("DOMContentLoaded", () => {
 
         authForm.submit();
     });
-
-    // document.getElementById("forgotPasswordLink").addEventListener("click", (event) => {
-    //     event.preventDefault();
-    //     alert("Password recovery has not been implemented yet.");
-    // });
 });
