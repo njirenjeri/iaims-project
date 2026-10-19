@@ -1,20 +1,20 @@
-<!-- enetry point -->
- <?php
-//  start session
-session_start();
+    <!-- enetry point -->
+    <?php
+    //  start session
+    session_start();
 
-require_once __DIR__ . '/config/app.php';
+    require_once __DIR__ . '/config/app.php';
 
-// define the pages that visitors are allowed to request
+    // define the pages that visitors are allowed to request
 
-$routes = [
-    'login' => __DIR__ . '/pages/login.php',
-    'register' => __DIR__ . '/pages/register.php',
-    'dashboard' => __DIR__ . '/pages/dashboard.php',
+    $routes = [
+        'login' => __DIR__ . '/pages/login.php',
+        'register' => __DIR__ . '/pages/register.php',
+        'dashboard' => __DIR__ . '/pages/dashboard.php',
 
-    'profile' => __DIR__ . '/pages/student/profile.php',
-    'qualifications' => __DIR__ . '/pages/student/qualifications.php',
-    'applications' => __DIR__ . '/pages/student/applications.php',
+        'profile' => __DIR__ . '/pages/student/profile.php',
+        'qualifications' => __DIR__ . '/pages/student/qualifications.php',
+        'applications' => __DIR__ . '/pages/student/applications.php',
 
     ];
     // get the requested file else direct to login page
@@ -28,4 +28,4 @@ $routes = [
 
     // load requested
     require $routes[$page];
- ?>
+    ?>
