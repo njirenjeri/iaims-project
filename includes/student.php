@@ -5,8 +5,16 @@ const PROFILE_SECTIONS = [
     'personal' => [
         'table' => 'student_personal',
         'label' => 'Personal details',
-        'fields' => ['first_name', 'other_names', 'identity_type', 'identity_number',
-                     'phone_number', 'alternate_phone_number', 'nationality', 'gender'],
+        'fields' => [
+            'first_name',
+            'other_names',
+            'identity_type',
+            'identity_number',
+            'phone_number',
+            'alternate_phone_number',
+            'nationality',
+            'gender'
+        ],
     ],
     'academic' => [
         'table' => 'student_academic',
@@ -30,12 +38,13 @@ function profileDefaults(): array
         }
     }
 
-        return array_merge(
-            $defaults,
-            [
-                'identity_type' => 'national_id',
-                'nationality' => 'Kenyan'
-            ]);
+    return array_merge(
+        $defaults,
+        [
+            'identity_type' => 'national_id',
+            'nationality' => 'Kenyan'
+        ]
+    );
 }
 
 // Returns ['values' => field => value, 'saved' => section => bool, 'updated_at' => ?string].
@@ -197,8 +206,8 @@ function saveProfileSection(PDO $pdo, string $userId, string $section, array $cl
     $now = date('Y-m-d H:i:s');
 
     $columns = implode(', ', $fields);
-    $placeholders = implode(', ', array_map(static fn ($field) => ':' . $field, $fields));
-    $updates = implode(', ', array_map(static fn ($field) => "{$field} = VALUES({$field})", $fields));
+    $placeholders = implode(', ', array_map(static fn($field) => ':' . $field, $fields));
+    $updates = implode(', ', array_map(static fn($field) => "{$field} = VALUES({$field})", $fields));
 
     // VALUES() works on both MySQL and MariaDB.
     $sql = "INSERT INTO {$definition['table']} (user_id, {$columns}, created_at, updated_at)
@@ -275,8 +284,10 @@ function createApplication(PDO $pdo, string $userId, array $profile, array $inpu
     $department = is_string($input['state_department'] ?? null) ? trim($input['state_department']) : '';
     $errors = [];
 
-    if (!isset($lookups['ministries'][$ministry])
-        || !in_array($department, $lookups['ministries'][$ministry], true)) {
+    if (
+        !isset($lookups['ministries'][$ministry])
+        || !in_array($department, $lookups['ministries'][$ministry], true)
+    ) {
         $errors[] = 'Select a valid ministry and state department.';
     }
 
@@ -380,31 +391,22 @@ function createApplication(PDO $pdo, string $userId, array $profile, array $inpu
         return ['success' => false, 'errors' => ['Your application could not be submitted. Please try again.']];
     }
 }
+function statusBadge(string $status): string
+{
+    $colours = [
+        'submitted' => 'primary',
+        'under_review' => 'warning',
+        'accepted' => 'success',
+        'rejected' => 'danger',
+        'withdrawn' => 'secondary',
+    ];
 
-// function listApplications(PDO $pdo, string $userId): array
-// {
-//     $statement = $pdo->prepare(
-//         'SELECT application_id, ministry, state_department, status, submitted_at
-//          FROM applications WHERE user_id = :user_id ORDER BY submitted_at DESC'
-//     );
-//     $statement->execute(['user_id' => $userId]);
-
-//     return $statement->fetchAll();
-// }
-
-// function statusBadge(string $status): string
-// {
-//     $colours = [
-//         'submitted' => 'primary', 'under_review' => 'warning', 'accepted' => 'success',
-//         'rejected' => 'danger', 'withdrawn' => 'secondary',
-//     ];
-
-//     return sprintf(
-//         '<span class="badge text-bg-%s">%s</span>',
-//         $colours[$status] ?? 'secondary',
-//         escapeHtml(ucwords(str_replace('_', ' ', $status)))
-//     );
-// }
+    return sprintf(
+        '<span class="badge text-bg-%s">%s</span>',
+        $colours[$status] ?? 'secondary',
+        escapeHtml(ucwords(str_replace('_', ' ', $status)))
+    );
+}
 
 
 function listApplications(PDO $pdo, string $userId, ?int $limit = null): array
