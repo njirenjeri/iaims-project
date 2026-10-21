@@ -14,31 +14,40 @@ function currentRole(): string {
     if (!is_array($roles)) return 'Admin';
     foreach ($roles as $role) {
         if (!is_string($role)) continue;
-        $normalized = strtolower(trim(str_replace(['_', '-'], ' ', $role)));
+        $normalized = normalizedAdminRole($role);
         if (in_array($normalized, ['super admin', 'system admin', 'admin', 'administrator'], true)) return $role;
     }
     foreach ($roles as $role) {
-        if (is_string($role) && in_array(strtolower(trim(str_replace(['_', '-'], ' ', $role))), ['hr admin', 'hr officer', 'supervisor'], true)) return $role;
+        if (is_string($role) && in_array(normalizedAdminRole($role), ['hr admin', 'hr officer', 'supervisor'], true)) return $role;
     }
     return 'Admin';
 }
 
+function normalizedAdminRole(string $role): string {
+    return strtolower(trim(str_replace(['_', '-'], ' ', $role)));
+}
+
 function adminRequireAccess(): void {
+    $hasUserSession = !empty($_SESSION['user_id']);
     $roles = $_SESSION['user_roles'] ?? [];
     $allowed = ['admin', 'administrator', 'super admin', 'system admin', 'hr admin', 'hr officer', 'supervisor'];
     foreach (is_array($roles) ? $roles : [] as $role) {
-        if (is_string($role) && in_array(strtolower(trim(str_replace(['_', '-'], ' ', $role))), $allowed, true)) {
+        if ($hasUserSession && is_string($role) && in_array(normalizedAdminRole($role), $allowed, true)) {
             return;
         }
     }
-    http_response_code(403);
-    exit('Access denied.');
+
+    $_SESSION['auth_error'] = $hasUserSession
+        ? 'Your account does not have permission to access the admin panel.'
+        : 'Please sign in to access the admin panel.';
+    header('Location: ' . BASE_URL . '/?page=login');
+    exit;
 }
 
 function isSuperAdmin(): bool {
     $roles = $_SESSION['user_roles'] ?? [];
     foreach (is_array($roles) ? $roles : [] as $role) {
-        if (is_string($role) && in_array(strtolower(trim(str_replace(['_', '-'], ' ', $role))), ['super admin', 'system admin', 'admin', 'administrator'], true)) {
+        if (is_string($role) && in_array(normalizedAdminRole($role), ['super admin', 'system admin', 'admin', 'administrator'], true)) {
             return true;
         }
     }

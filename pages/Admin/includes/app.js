@@ -33,6 +33,10 @@
     const main = $('main[data-admin-api]');
     data.append('csrf_token', main.dataset.csrfToken);
     const res = await fetch(main.dataset.adminApi, { method: 'POST', body: data });
+    if (res.redirected && new URL(res.url, window.location.href).searchParams.get('page') === 'login') {
+      window.location.assign(res.url);
+      return { ok: false, message: 'Your session has ended. Redirecting to sign in.' };
+    }
     let json;
     try { json = await res.json(); } catch (e) { json = { ok: false, message: 'Unexpected server response.' }; }
     return json;
@@ -82,7 +86,20 @@
       });
       none.hidden = shown !== 0;
     }
-    [search, role, min].forEach((el) => el.addEventListener('input', filterUsers));
+    rows.forEach((row) => {
+      row.addEventListener('click', (event) => {
+        if (event.target.closest('a, button, input, select')) return;
+        window.location.assign(row.dataset.userUrl);
+      });
+      row.addEventListener('keydown', (event) => {
+        if (event.target === row && (event.key === 'Enter' || event.key === ' ')) {
+          event.preventDefault();
+          window.location.assign(row.dataset.userUrl);
+        }
+      });
+    });
+    search.addEventListener('input', filterUsers);
+    [role, min].forEach((el) => el.addEventListener('change', filterUsers));
     chips.forEach((chip) => chip.addEventListener('click', () => {
       chips.forEach((c) => c.classList.remove('active'));
       chip.classList.add('active');
@@ -97,18 +114,19 @@
     const rows = $$('tr.audit-row', auditTable);
     const none = $('#noResults');
     const f = {
-      q: $('#auditSearch'), action: $('#actionFilter'), outcome: $('#outcomeFilter'),
+      actor: $('#actorFilter'), target: $('#targetFilter'), action: $('#actionFilter'), outcome: $('#outcomeFilter'),
       from: $('#dateFrom'), to: $('#dateTo'),
     };
 
     function detailOf(row) { return document.getElementById(row.getAttribute('aria-controls')); }
 
     function filterAudit() {
-      const q = f.q.value.trim().toLowerCase();
+      const target = f.target.value.trim().toLowerCase();
       let shown = 0;
       rows.forEach((tr) => {
         const d = tr.dataset.date;
-        const ok = (!q || tr.dataset.search.includes(q))
+        const ok = (!f.actor.value || tr.dataset.actor === f.actor.value)
+                && (!target || tr.dataset.target.toLowerCase().includes(target))
                 && (!f.action.value  || tr.dataset.action === f.action.value)
                 && (!f.outcome.value || tr.dataset.outcome === f.outcome.value)
                 && (!f.from.value || d >= f.from.value)
@@ -120,7 +138,8 @@
       });
       none.hidden = shown !== 0;
     }
-    Object.values(f).forEach((el) => el.addEventListener('input', filterAudit));
+    [f.target, f.from, f.to].forEach((el) => el.addEventListener('input', filterAudit));
+    [f.actor, f.action, f.outcome, f.from, f.to].forEach((el) => el.addEventListener('change', filterAudit));
 
     function toggleRow(tr) {
       const detail = detailOf(tr);
@@ -236,6 +255,11 @@
     const modalEl = $('#actionModal');
     const modal   = bootstrap.Modal.getOrCreateInstance(modalEl);
     const form    = $('#actionForm');
+    const roleSelect = $('#newRole');
+    const scopeSelect = $('#newScope');
+    const ministries = JSON.parse(actions.dataset.ministries || '{}');
+    const originalScope = actions.dataset.userScope;
+    const userMinistry = actions.dataset.userMinistry;
     const copy = {
       force_reset:   ['Force password reset', 'The user must set a new password at next sign-in. Their current sessions end.', false, true],
       resend_invite: ['Resend invite',        'A fresh invite link replaces the old one.',                                   false, false],
@@ -245,6 +269,13 @@
     };
     let current = '';
 
+    function syncScopes() {
+      const role = roleSelect.value;
+      const scopes = role === 'Supervisor' ? (ministries[userMinistry] || []) : [userMinistry];
+      scopeSelect.replaceChildren(...scopes.map((scope) => new Option(scope, scope)));
+      scopeSelect.value = scopes.includes(originalScope) ? originalScope : (scopes[0] || '');
+    }
+
     $$('[data-account-action]', actions).forEach((btn) => btn.addEventListener('click', () => {
       current = btn.dataset.accountAction;
       const [title, text, showRole, showReason] = copy[current];
@@ -252,9 +283,11 @@
       $('#actionText').textContent = text;
       $('#roleGroup').hidden = !showRole;
       $('#reasonGroup').hidden = !showReason;
+      if (showRole) syncScopes();
       $('#actionConfirm').textContent = title;
       modal.show();
     }));
+    roleSelect.addEventListener('change', syncScopes);
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -268,6 +301,7 @@
         const data = await post(fd);
         modal.hide();
         showToast(data.message || (data.ok ? 'Done.' : 'Something went wrong.'));
+        if (data.ok) window.setTimeout(() => window.location.reload(), 700);
       } catch (err) {
         showToast('Could not reach the server. Check your connection and try again.');
       } finally {

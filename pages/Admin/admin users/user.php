@@ -48,7 +48,10 @@ $canResend = $u['status'] === 'Invited';
       </dl>
     </section>
 
-    <section class="panel" id="accountActions" data-user-id="<?= (int)$u['id'] ?>" data-user-name="<?= h($u['name']) ?>">
+    <section class="panel" id="accountActions" data-user-id="<?= (int)$u['id'] ?>"
+             data-user-name="<?= h($u['name']) ?>" data-user-ministry="<?= h($u['ministry']) ?>"
+             data-user-scope="<?= h($u['scope']) ?>"
+             data-ministries="<?= h(json_encode(getMinistries(), JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_HEX_TAG)) ?>">
       <h2 class="panel-title">Account actions</h2>
       <div class="d-grid gap-2">
         <button class="btn btn-action" data-account-action="force_reset"><i class="bi bi-key"></i> Force password reset</button>
@@ -95,9 +98,11 @@ $canResend = $u['status'] === 'Invited';
         <p id="actionText" class="mb-3"></p>
         <div id="roleGroup" hidden>
           <label class="form-label" for="newRole">New role</label>
-          <select class="form-select" id="newRole" name="role">
+          <select class="form-select mb-3" id="newRole" name="role">
             <?php foreach (assignableRoles() as $r): ?><option <?= $r === $u['role'] ? 'selected' : '' ?>><?= h($r) ?></option><?php endforeach; ?>
           </select>
+          <label class="form-label" for="newScope">Ministry or state department</label>
+          <select class="form-select" id="newScope" name="scope" required></select>
         </div>
         <div id="reasonGroup" hidden>
           <label class="form-label" for="reason">Reason (recorded in the audit log)</label>

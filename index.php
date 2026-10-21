@@ -30,6 +30,7 @@ $protectedRoutes = [
     'admin-invite' => __DIR__ . '/pages/Admin/includes/api.php',
     'admin-users' => __DIR__ . '/pages/Admin/admin users/users.php',
     'admin-user' => __DIR__ . '/pages/Admin/admin users/user.php',
+    'admin-user-detail' => __DIR__ . '/pages/Admin/admin users/user.php',
     'admin-invite-page' => __DIR__ . '/pages/Admin/admin users/invite.php',
     'admin-audit' => __DIR__ . '/pages/Admin/audit logs/audit.php',
     'admin-security' => __DIR__ . '/pages/Admin/admin dashboard/security.php',
@@ -50,9 +51,16 @@ if (isset($publicRoutes[$page])) {
     $file = $publicRoutes[$page];
 } elseif (isset($protectedRoutes[$page])) {
     if (empty($_SESSION['user_id'])) {
+        $_SESSION['auth_error'] = 'Please sign in to access that page.';
         header('Location: ' . BASE_URL . '/?page=login');
         exit;
     }
+
+    if (str_starts_with($page, 'admin-')) {
+        require_once __DIR__ . '/pages/Admin/includes/data.php';
+        adminRequireAccess();
+    }
+
     $file = $protectedRoutes[$page];
 } else {
     http_response_code(404);

@@ -52,14 +52,16 @@ $statusCls  = ['Active' => 'status-ok', 'Invited' => 'status-invited', 'Suspende
   <div class="table-responsive">
     <table class="table table-hover align-middle mb-0 data-table" id="usersTable">
       <thead>
-        <tr><th>User</th><th>Role</th><th>Scope</th><th>Status</th><th>Last sign-in</th></tr>
+        <tr><th>User</th><th>Role</th><th>Scope / Ministry</th><th>Status</th><th>Last sign-in</th></tr>
       </thead>
       <tbody>
         <?php foreach ($users as $u): ?>
-          <tr data-name="<?= h(strtolower($u['name'] . ' ' . $u['email'])) ?>"
+          <tr class="user-row" tabindex="0" role="link"
+              data-user-url="<?= h(adminUrl('admin-user-detail', ['id' => (int)$u['id']])) ?>"
+              data-name="<?= h(strtolower($u['name'] . ' ' . $u['email'])) ?>"
               data-role="<?= h($u['role']) ?>" data-ministry="<?= h($u['ministry']) ?>" data-status="<?= h($u['status']) ?>">
             <td>
-              <a class="link-name" href="<?= h(adminUrl('admin-user', ['id' => (int)$u['id']])) ?>"><?= h($u['name']) ?></a>
+              <a class="link-name" href="<?= h(adminUrl('admin-user-detail', ['id' => (int)$u['id']])) ?>"><?= h($u['name']) ?></a>
               <div class="text-muted small"><?= h($u['email']) ?></div>
             </td>
             <td><?= h($u['role']) ?></td>

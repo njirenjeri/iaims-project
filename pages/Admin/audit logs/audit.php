@@ -4,7 +4,9 @@ require __DIR__ . '/../includes/header.php';
 
 $log     = getAuditLog();
 $actions = array_values(array_unique(array_column($log, 'action')));
+$actors  = array_values(array_unique(array_column($log, 'actor')));
 sort($actions);
+sort($actors);
 ?>
 <header class="page-head">
   <div class="d-flex gap-3 align-items-start">
@@ -21,24 +23,36 @@ sort($actions);
 </header>
 
 <div class="row g-2 mb-3">
-  <div class="col-12 col-lg-4">
-    <input class="form-control" id="auditSearch" type="search" placeholder="Search actor, target, IP" aria-label="Search actor, target, IP">
+  <div class="col-12 col-md-6 col-lg-2">
+    <label class="form-label small mb-1" for="actorFilter">Actor</label>
+    <select class="form-select" id="actorFilter" aria-label="Filter by actor">
+      <option value="">All actors</option>
+      <?php foreach ($actors as $actor): ?><option><?= h($actor) ?></option><?php endforeach; ?>
+    </select>
+  </div>
+  <div class="col-12 col-md-6 col-lg-2">
+    <label class="form-label small mb-1" for="targetFilter">Target</label>
+    <input class="form-control" id="targetFilter" type="search" placeholder="Search target" aria-label="Filter by target">
   </div>
   <div class="col-6 col-lg-2">
+    <label class="form-label small mb-1" for="actionFilter">Action</label>
     <select class="form-select" id="actionFilter" aria-label="Filter by action">
       <option value="">All actions</option>
       <?php foreach ($actions as $a): ?><option><?= h($a) ?></option><?php endforeach; ?>
     </select>
   </div>
   <div class="col-6 col-lg-2">
+    <label class="form-label small mb-1" for="outcomeFilter">Outcome</label>
     <select class="form-select" id="outcomeFilter" aria-label="Filter by outcome">
       <option value="">All outcomes</option><option>Success</option><option>Denied</option>
     </select>
   </div>
   <div class="col-6 col-lg-2">
+    <label class="form-label small mb-1" for="dateFrom">From</label>
     <input class="form-control" id="dateFrom" type="date" aria-label="From date">
   </div>
   <div class="col-6 col-lg-2">
+    <label class="form-label small mb-1" for="dateTo">To</label>
     <input class="form-control" id="dateTo" type="date" aria-label="To date">
   </div>
 </div>
@@ -54,8 +68,7 @@ sort($actions);
           <tr class="audit-row" tabindex="0" role="button" aria-expanded="false" aria-controls="detail-<?= $i ?>"
               data-date="<?= h($r['date']) ?>" data-action="<?= h($r['action']) ?>" data-outcome="<?= h($r['outcome']) ?>"
               data-time="<?= h($r['time']) ?>" data-actor="<?= h($r['actor']) ?>" data-target="<?= h($r['target']) ?>"
-              data-ip="<?= h($r['device']['IP']) ?>"
-              data-search="<?= h(strtolower($r['actor'] . ' ' . $r['target'] . ' ' . $r['device']['IP'])) ?>">
+              data-ip="<?= h($r['device']['IP']) ?>">
             <td><?= h($r['time']) ?></td>
             <td><?= h($r['actor']) ?><?php if ($r['actor_role']): ?><div class="text-muted small"><?= h($r['actor_role']) ?></div><?php endif; ?></td>
             <td><?= h($r['action']) ?></td>

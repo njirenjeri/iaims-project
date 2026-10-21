@@ -19,7 +19,8 @@ if (empty($_SESSION['csrf_token'])) {
 }
 
 // Messages displayed by the login page.
-$errorMessage = '';
+$errorMessage = $_SESSION['auth_error'] ?? '';
+unset($_SESSION['auth_error']);
 $successMessage = $_SESSION['auth_success'] ?? '';
 unset($_SESSION['auth_success']);
 

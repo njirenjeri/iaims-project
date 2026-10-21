@@ -4,7 +4,15 @@ $pageTitle = 'Admin settings';
 require __DIR__ . '/../includes/header.php';
 if (!isSuperAdmin()) {
     http_response_code(403);
-    exit('Only a super administrator can change these settings.');
+    ?>
+    <header class="page-head"><h1 class="h4 mb-0">Access denied</h1></header>
+    <section class="panel" role="alert">
+      <p>Only a super administrator can change these settings.</p>
+      <a class="link-blue" href="<?= h(adminUrl('admin-dashboard')) ?>">Return to the admin dashboard</a>
+    </section>
+    <?php
+    require __DIR__ . '/../includes/footer.php';
+    exit;
 }
 $settings = adminDemoState()['settings'];
 ?>

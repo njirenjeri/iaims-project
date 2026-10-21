@@ -130,9 +130,23 @@ if ($action === 'account_action') {
         if (!in_array($newRole, assignableRoles(), true)) {
             adminJsonResponse(['ok' => false, 'message' => 'Choose a role you are allowed to assign.'], 422);
         }
+        $newScope = trim((string)($_POST['scope'] ?? ''));
+        $ministryOptions = getMinistries();
+        $allowedScopes = $newRole === 'Supervisor'
+            ? ($ministryOptions[$user['ministry']] ?? [])
+            : [$user['ministry']];
+        if (!in_array($newScope, $allowedScopes, true)) {
+            adminJsonResponse(['ok' => false, 'message' => 'Choose a valid scope for this user and role.'], 422);
+        }
         $oldRole = $user['role'];
+        $oldScope = $user['scope'];
         $state['users'][$id]['role'] = $newRole;
-        $recordAudit($labels[$type][1], $user['name'], ['Role' => "$oldRole to $newRole", 'Reason' => trim((string)($_POST['reason'] ?? ''))]);
+        $state['users'][$id]['scope'] = $newScope;
+        $recordAudit($labels[$type][1], $user['name'], [
+            'Role' => "$oldRole to $newRole",
+            'Scope' => "$oldScope to $newScope",
+            'Reason' => trim((string)($_POST['reason'] ?? '')),
+        ]);
     } elseif ($type === 'suspend' || $type === 'reactivate') {
         $oldStatus = $user['status'];
         $state['users'][$id]['status'] = $type === 'suspend' ? 'Suspended' : 'Active';
