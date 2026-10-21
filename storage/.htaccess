@@ -1,0 +1,6 @@
+<Files "admin-module.json">
+    Require all denied
+</Files>
+<Files "admin-demo.json">
+    Require all denied
+</Files>

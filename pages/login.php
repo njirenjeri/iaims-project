@@ -121,6 +121,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     class="coat-of-arms mb-2"
                 >
                 <p class="text-secondary opacity-50 small fw-semibold mb-1 republic-heading">REPUBLIC OF KENYA</p>
+                <p class="small mb-2">
+                    <a href="https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Kenya_(Official).svg" rel="noopener noreferrer" target="_blank">Coat of Arms by Ashiriz</a>
+                    · <a href="https://creativecommons.org/licenses/by-sa/3.0/" rel="license noopener noreferrer" target="_blank">CC BY-SA 3.0</a>
+                </p>
 
                 <h1 class="h4 fw-semibold mb-1">Industrial Attachment</h1>
 

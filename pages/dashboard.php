@@ -10,6 +10,11 @@ if (in_array('STUDENT', $_SESSION['user_roles'] ?? [], true)) {
     return;
 }
 
+if (in_array('ADMIN', $_SESSION['user_roles'] ?? [], true)) {
+    require __DIR__ . '/Admin/admin dashboard/dashboard.php';
+    return;
+}
+
 // Other roles get their dashboards with their modules.
 require __DIR__ . '/../includes/auth_top.php';
 ?>

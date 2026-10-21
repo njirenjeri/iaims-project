@@ -13,5 +13,7 @@
 Thumbs.db
 .vscode/
 
-   # Uploaded application documents (personal data)
-   /storage/
+# Uploaded application documents (personal data)
+/storage/*
+!/storage/
+!/storage/.htaccess
