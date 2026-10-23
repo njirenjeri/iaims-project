@@ -1,9 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../config/app.php';
-require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/functions.php';
-require_once __DIR__ . '/../includes/student.php';
 
 if (in_array('STUDENT', $_SESSION['user_roles'] ?? [], true)) {
     require __DIR__ . '/student/dashboard.php';
@@ -26,5 +24,9 @@ require __DIR__ . '/../includes/auth_top.php';
     <input type="hidden" name="csrf_token" value="<?= escapeHtml(csrfToken()) ?>">
     <button type="submit" class="btn btn-primary w-100">Sign out</button>
 </form>
+if (in_array('HR', $_SESSION['user_roles'] ?? [], true)) {
+    require __DIR__ . '/HR/hr_dashboard.php';
+    return;
+}
 
-<?php require __DIR__ . '/../includes/auth_bottom.php'; ?>
+require __DIR__ . '/admin_dashboard.php';

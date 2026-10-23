@@ -1,0 +1,59 @@
+:root {
+  --navy:#14213d; --navy-dark:#0f1a31; --gold:#c9a23f; --white:#fff;
+  --bg:#f5f6fa; --border:#e6e9f0; --line:1px;
+}
+
+body { font-family:'Poppins', sans-serif; background:var(--bg); color:#1b2540; }
+
+/* Sidebar */
+.sidebar { width:260px; min-height:100vh; background:var(--navy); color:var(--white); flex-shrink:0; padding:20px 14px; }
+
+/* Logo (same style as student portal) */
+.brand { display:flex; align-items:center; gap:14px; padding:4px 8px 26px; }
+.brand-icon { width:57px; height:57px; border-radius:14px; background:var(--gold); color:var(--navy);
+              display:flex; align-items:center; justify-content:center; font-size:1.7rem; flex-shrink:0; }
+.brand-name { font-weight:700; font-size:1.25rem; line-height:1.15; color:#fff; }
+.brand-sub { font-size:.9rem; color:#9aa3b8; line-height:1.2; }
+
+.sidebar a { display:flex; align-items:center; gap:12px; padding:12px 14px; margin-bottom:4px;
+             color:#c5cbdb; text-decoration:none; border-radius:10px; border-left:var(--line) solid transparent; }
+.sidebar a:hover { background:rgba(255,255,255,.06); color:#fff; }
+.sidebar a.active { background:rgba(255,255,255,.08); color:#fff; font-weight:600; border-left-color:var(--gold); }
+.sidebar a.active i { color:var(--gold); }
+.sidebar a i { font-size:1.1rem; }
+
+/* Page heading */
+.content { flex:1; min-width:0; }
+.page-head { display:flex; justify-content:space-between; align-items:center; padding:28px 32px 0; }
+.head-right { display:flex; align-items:center; gap:14px; }
+.eyebrow { color:#0d6efd; font-weight:600; font-size:.8rem; letter-spacing:.04em; text-transform:uppercase; }
+.page-head h1 { font-size:2rem; font-weight:700; margin:0; color:#1b2540; }
+.user-chip { background:var(--white); border:var(--line) solid var(--border); border-radius:999px;
+             padding:6px 14px; font-size:.9rem; color:#5b6479; }
+.page-body { padding:24px 32px; }
+
+/* Cards */
+.card-hr { background:var(--white); border:var(--line) solid var(--border); border-radius:14px; }
+
+.stat-card { background:var(--white); border:var(--line) solid var(--border); border-radius:14px;
+             padding:18px 20px; display:flex; align-items:center; gap:16px; }
+.stat-icon { width:48px; height:48px; border-radius:12px; background:#e8f0fe; color:#2b5cc4;
+             display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0; }
+.stat-card small { color:#6b7388; }
+.stat-card h2 { margin:0; font-weight:700; color:var(--navy); font-size:1.8rem; }
+
+/* Tables (slim) */
+.table { font-size:.9rem; }
+.table thead th { background:var(--navy); color:var(--white); border:0; font-weight:500;
+                  font-size:.85rem; padding:.45rem .75rem; }
+.table tbody td { padding:.5rem .75rem; }
+
+/* Buttons */
+.btn-blue { background:var(--navy); color:var(--white); }
+.btn-blue:hover { background:var(--navy-dark); color:var(--white); }
+.btn-gold { background:var(--gold); color:var(--navy); font-weight:500; }
+.btn-gold:hover { background:#b38f33; color:var(--navy); }
+.progress-bar { background:var(--gold); }
+
+/* Modal header */
+.modal-hr-header { background:var(--navy); color:#fff; border-bottom:var(--line) solid var(--gold); }
