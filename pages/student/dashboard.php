@@ -96,7 +96,7 @@ $currentPage = 'dashboard';
                             <p class="small text-secondary mb-1">Latest application</p>
                             <p class="mb-0">
                                 <span class="fw-semibold"><?= escapeHtml($recent[0]['state_department']) ?></span>
-                                <span class="ms-2"><?= statusBadge($recent[0]['status']) ?></span>
+                                <!-- <span class="ms-2"><?= statusBadge($recent[0]['status']) ?></span> -->
                             </p>
                         </div>
                         <a class="btn btn-outline-secondary btn-sm px-3" href="<?= escapeHtml(BASE_URL) ?>/?page=applications">New application</a>
