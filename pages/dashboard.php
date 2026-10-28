@@ -1,19 +1,29 @@
+
 <?php
 
-require_once __DIR__ . '/../config/app.php';
+require_once __DIR__ . '/../includes/bootstrap.php';
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/guards.php';
+require_once __DIR__ . '/../config/app.php';
 
-if (in_array('STUDENT', $_SESSION['user_roles'] ?? [], true)) {
+
+// Everyone lands on ?page=dashboard after signing in; the role decides what they see.
+if (userHasRole('ADMIN')) {
+    require __DIR__ . '/admin/dashboard.php';
+    return;
+}
+
+if (userHasRole('STUDENT')) {
     require __DIR__ . '/student/dashboard.php';
     return;
 }
 
-if (in_array('ADMIN', $_SESSION['user_roles'] ?? [], true)) {
-    require __DIR__ . '/Admin/admin dashboard/dashboard.php';
+if (userHasRole('HR') || userHasRole('HR_ADMIN') || userHasRole('SUPERVISOR')) {
+    require __DIR__ . '/staff/home.php';
     return;
 }
 
-// Other roles get their dashboards with their modules.
+// A role we don't have a dashboard for.
 require __DIR__ . '/../includes/auth_top.php';
 ?>
 
@@ -24,9 +34,5 @@ require __DIR__ . '/../includes/auth_top.php';
     <input type="hidden" name="csrf_token" value="<?= escapeHtml(csrfToken()) ?>">
     <button type="submit" class="btn btn-primary w-100">Sign out</button>
 </form>
-if (in_array('HR', $_SESSION['user_roles'] ?? [], true)) {
-    require __DIR__ . '/HR/hr_dashboard.php';
-    return;
-}
 
-require __DIR__ . '/admin_dashboard.php';
+<?php require __DIR__ . '/../includes/auth_bottom.php'; ?>
