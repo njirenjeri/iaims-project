@@ -14,8 +14,8 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // // Messages displayed by the login page.
 // $errorMessage = '';
-// $successMessage = $_SESSION['auth_success'] ?? '';
-// unset($_SESSION['auth_success']);
+$successMessage = $_SESSION['auth_success'] ?? '';
+unset($_SESSION['auth_success']);
 
 // Generate a CSRF token to protect form submissions.
 if (empty($_SESSION['csrf_token'])) {

@@ -17,3 +17,6 @@ Thumbs.db
 /storage/*
 !/storage/
 !/storage/.htaccess
+
+
+/config/secrets.php

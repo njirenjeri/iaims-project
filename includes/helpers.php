@@ -101,3 +101,60 @@ function generateUuid(): string
 
     return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
 }
+
+/* ---------- Links and display ---------- */
+
+// Build a link to a page with optional query parameters; empty values are left out.
+function urlWith(string $page, array $params = []): string
+{
+    $params = array_filter(
+        $params,
+        static fn ($value) => $value !== '' && $value !== null && $value !== 0 && $value !== '0'
+    );
+
+    return BASE_URL . '/?' . http_build_query(['page' => $page] + $params);
+}
+
+// Format a database date/time for display; empty when there is no value.
+function formatWhen(string $value, string $format = 'j M Y, H:i'): string
+{
+    $time = $value !== '' ? strtotime($value) : false;
+
+    return $time ? date($format, $time) : '';
+}
+
+// Previous / numbered / next links. $params are the current filters (without the page number "p").
+function renderPagination(string $page, array $params, int $current, int $total, int $perPage): string
+{
+    $pages = (int) ceil($total / max(1, $perPage));
+
+    if ($pages <= 1) {
+        return '';
+    }
+
+    $link = static fn (int $number): string => escapeHtml(urlWith($page, $params + ['p' => $number]));
+
+    $html = '<nav aria-label="Pagination"><ul class="pagination pagination-sm mb-0">';
+    $html .= sprintf(
+        '<li class="page-item%s"><a class="page-link" href="%s">Previous</a></li>',
+        $current <= 1 ? ' disabled' : '',
+        $link(max(1, $current - 1))
+    );
+
+    for ($number = max(1, $current - 2); $number <= min($pages, $current + 2); $number++) {
+        $html .= sprintf(
+            '<li class="page-item%s"><a class="page-link" href="%s">%d</a></li>',
+            $number === $current ? ' active' : '',
+            $link($number),
+            $number
+        );
+    }
+
+    $html .= sprintf(
+        '<li class="page-item%s"><a class="page-link" href="%s">Next</a></li>',
+        $current >= $pages ? ' disabled' : '',
+        $link(min($pages, $current + 1))
+    );
+
+    return $html . '</ul></nav>';
+}
