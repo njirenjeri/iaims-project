@@ -2,20 +2,23 @@ document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("applicationForm");
     if (!form) return;
 
-    const ministrySelect = document.getElementById("ministry");
-    const departmentSelect = document.getElementById("state_department");
-    const departmentsByMinistry = window.applicationDepartments || {};
+    const ministrySelect = document.getElementById("ministry_id");
+    const departmentSelect = document.getElementById("department_id");
+    const directory = Array.isArray(window.applicationDirectory) ? window.applicationDirectory : [];
     const fileInputs = document.querySelectorAll(".application-file");
     const maxFileSize = 10 * 1024 * 1024;
 
     /* ---------- Ministry and state department ---------- */
 
-    function updateDepartments(keepSelection = false) {
-        // After a failed submit the server prints the earlier choice in data-selected.
-        const previouslySelected = keepSelection
-            ? departmentSelect.value || departmentSelect.dataset.selected
-            : "";
-        const departments = departmentsByMinistry[ministrySelect.value] || [];
+    // Fill the department list for the chosen ministry. After a failed submit the server prints
+    // the earlier choice in data-selected so it can be restored.
+    function updateDepartments() {
+        if (!ministrySelect || !departmentSelect) return;
+
+        const ministryId = Number(ministrySelect.value) || 0;
+        const keep = departmentSelect.dataset.selected || departmentSelect.value;
+        const ministry = directory.find((item) => item.id === ministryId);
+        const departments = ministry ? ministry.departments : [];
 
         departmentSelect.replaceChildren(new Option(
             departments.length ? "Select state department" : "Select a ministry first",
@@ -24,17 +27,22 @@ document.addEventListener("DOMContentLoaded", () => {
         departmentSelect.disabled = departments.length === 0;
 
         departments.forEach((department) => {
-            departmentSelect.add(new Option(department, department));
+            departmentSelect.add(new Option(department.name, String(department.id)));
         });
 
-        if (departments.includes(previouslySelected)) {
-            departmentSelect.value = previouslySelected;
+        if (keep && departments.some((department) => String(department.id) === String(keep))) {
+            departmentSelect.value = String(keep);
         }
         departmentSelect.dataset.selected = "";
     }
 
-    ministrySelect.addEventListener("change", () => updateDepartments());
-    updateDepartments(true);
+    if (ministrySelect && departmentSelect) {
+        ministrySelect.addEventListener("change", () => {
+            departmentSelect.dataset.selected = "";
+            updateDepartments();
+        });
+        updateDepartments();
+    }
 
     /* ---------- PDF checks (the server repeats these) ---------- */
 

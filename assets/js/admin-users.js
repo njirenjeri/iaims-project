@@ -40,23 +40,25 @@ document.addEventListener("DOMContentLoaded", () => {
             departmentSelect.dataset.selected = "";
         }
 
-        // HR roles need a ministry; supervisors need a department; system admins need neither.
+        // HR officers, HR admins and supervisors each belong to one state department (the ministry
+        // only narrows the list). System admins need neither.
         function update() {
             const role = currentRole();
-            const needsMinistry = role === "HR" || role === "HR_ADMIN" || role === "SUPERVISOR";
-            const needsDepartment = role === "SUPERVISOR";
+            const needsDepartment = role === "HR" || role === "HR_ADMIN" || role === "SUPERVISOR";
 
-            ministryWrap.hidden = !needsMinistry;
+            ministryWrap.hidden = !needsDepartment;
             departmentWrap.hidden = !needsDepartment;
 
-            // A ministry fixed by the server (HR admins) stays as it is.
+            // A ministry or department fixed by the server (HR admins) stays as it is.
             if (ministrySelect.dataset.locked !== "true") {
-                ministrySelect.disabled = !needsMinistry;
-                ministrySelect.required = needsMinistry;
+                ministrySelect.disabled = !needsDepartment;
+                ministrySelect.required = needsDepartment;
             }
 
-            departmentSelect.disabled = !needsDepartment;
-            departmentSelect.required = needsDepartment;
+            if (departmentSelect.dataset.locked !== "true") {
+                departmentSelect.disabled = !needsDepartment;
+                departmentSelect.required = needsDepartment;
+            }
         }
 
         roleInputs.forEach((input) => input.addEventListener("change", update));

@@ -1,14 +1,11 @@
 <?php
-require_once __DIR__ . '/../../config/app.php';
-require_once __DIR__ . '/../../config/database.php';
-require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../includes/bootstrap.php';
 require_once __DIR__ . '/../../includes/student.php';
+require_once __DIR__ . '/../../includes/applications.php';
 
 requireRole('STUDENT');
 
-$lookups = require __DIR__ . '/../../config/lookups.php';
-$ministries = $lookups['ministries'];
-$documents = $lookups['documents'];
+$documents = lookupList('documents');
 $userId = $_SESSION['user_id'];
 
 // The profile must be complete before any application.
@@ -20,14 +17,18 @@ if (!isProfileComplete($profileData['saved'])) {
 }
 
 $profile = $profileData['values']; // flat: used for the summary card and the application snapshot
+$directory = applicationDirectory($pdo);
 
 $errors = [];
-$selectedMinistry = '';
-$selectedDepartment = '';
+$old = ['department_id' => 0, 'ministry_id' => 0, 'requested_weeks' => (string) attachmentMinWeeks(), 'earliest_start' => ''];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $selectedMinistry = is_string($_POST['ministry'] ?? null) ? $_POST['ministry'] : '';
-    $selectedDepartment = is_string($_POST['state_department'] ?? null) ? $_POST['state_department'] : '';
+    foreach (['department_id', 'ministry_id'] as $field) {
+        $old[$field] = isset($_POST[$field]) && ctype_digit((string) $_POST[$field]) ? (int) $_POST[$field] : 0;
+    }
+    foreach (['requested_weeks', 'earliest_start'] as $field) {
+        $old[$field] = is_string($_POST[$field] ?? null) ? trim($_POST[$field]) : '';
+    }
 
     if (empty($_POST) && empty($_FILES) && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
         // PHP discards everything when the request exceeds post_max_size.
@@ -35,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!verifyCsrf($_POST['csrf_token'] ?? null)) {
         $errors[] = 'Your session has expired. Please refresh the page and try again.';
     } else {
-        $result = createApplication($pdo, $userId, $profile, $_POST, $_FILES, $lookups);
+        $result = createApplication($pdo, $userId, $profile, $_POST);
 
         if ($result['success']) {
             setFlash('success', $result['message']);
@@ -48,6 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $applications = listApplications($pdo, $userId);
 $currentPage = 'applications';
+$directoryJson = json_encode($directory, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -71,7 +73,7 @@ $currentPage = 'applications';
                     <div>
                         <p class="text-uppercase text-primary fw-semibold small mb-2">Industrial attachment</p>
                         <h1 class="h2 fw-bold mb-2">Application form</h1>
-                        <!-- <p class="text-secondary mb-0">Choose your preferred government department and attach all required documents. Each application is separate; your profile is reused.</p> -->
+                        <p class="text-secondary mb-0">Applications are open all year. They are reviewed in the order they arrive, and if the department is full you join its waitlist.</p>
                     </div>
                 </div>
 
@@ -102,28 +104,46 @@ $currentPage = 'applications';
                     <section class="card profile-card mb-4" aria-labelledby="placement-heading">
                         <div class="card-header profile-card-header">
                             <span class="section-icon section-icon-gold"><i class="bi bi-building" aria-hidden="true"></i></span>
-                            <div><h2 class="h5 mb-1" id="placement-heading">Preferred placement</h2><p class="small text-secondary mb-0">Select the ministry and its state department</p></div>
+                            <div><h2 class="h5 mb-1" id="placement-heading">Where and when</h2><p class="small text-secondary mb-0">Your department of choice, and the length and timing of your attachment</p></div>
                         </div>
                         <div class="card-body p-3 p-md-4">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label for="ministry" class="form-label">Ministry <span class="text-danger">*</span></label>
-                                    <select class="form-select" id="ministry" name="ministry" required>
-                                        <option value="">Select ministry</option>
-                                        <?php foreach (array_keys($ministries) as $ministry): ?>
-                                            <option value="<?= escapeHtml($ministry) ?>" <?= $selectedMinistry === $ministry ? 'selected' : '' ?>><?= escapeHtml($ministry) ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                    <div class="invalid-feedback">Select a ministry.</div>
+                            <?php if (!$directory): ?>
+                                <div class="alert alert-info mb-0" role="status">No department is accepting applications right now. Please check again later.</div>
+                            <?php else: ?>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="ministry_id" class="form-label">Ministry <span class="text-danger">*</span></label>
+                                        <select class="form-select" id="ministry_id" name="ministry_id" required>
+                                            <option value="">Select ministry</option>
+                                            <?php foreach ($directory as $ministry): ?>
+                                                <option value="<?= (int) $ministry['id'] ?>" <?= $old['ministry_id'] === $ministry['id'] ? 'selected' : '' ?>><?= escapeHtml($ministry['name']) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <div class="invalid-feedback">Select a ministry.</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="department_id" class="form-label">State department <span class="text-danger">*</span></label>
+                                        <select class="form-select" id="department_id" name="department_id" data-selected="<?= (int) $old['department_id'] ?>" required>
+                                            <option value="">Select a ministry first</option>
+                                        </select>
+                                        <div class="form-text">You are considered for this department only.</div>
+                                        <div class="invalid-feedback">Select a state department.</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="requested_weeks" class="form-label">Attachment length (weeks) <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control" id="requested_weeks" name="requested_weeks" value="<?= escapeHtml($old['requested_weeks']) ?>" min="<?= attachmentMinWeeks() ?>" max="<?= attachmentMaxWeeks() ?>" required>
+                                        <div class="form-text">Between <?= attachmentMinWeeks() ?> and <?= attachmentMaxWeeks() ?> weeks, as your institution requires.</div>
+                                        <div class="invalid-feedback">Enter a number from <?= attachmentMinWeeks() ?> to <?= attachmentMaxWeeks() ?>.</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="earliest_start" class="form-label">Earliest date you can start <span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control" id="earliest_start" name="earliest_start" value="<?= escapeHtml($old['earliest_start']) ?>"
+                                               min="<?= date('Y-m-d') ?>" max="<?= date('Y-m-d', strtotime('+' . MAX_START_DAYS_AHEAD . ' days')) ?>" required>
+                                        <div class="form-text">Within the next <?= MAX_START_DAYS_AHEAD ?> days.</div>
+                                        <div class="invalid-feedback">Enter a start date.</div>
+                                    </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <label for="state_department" class="form-label">State department <span class="text-danger">*</span></label>
-                                    <select class="form-select" id="state_department" name="state_department" data-selected="<?= escapeHtml($selectedDepartment) ?>" required>
-                                        <option value="">Select a ministry first</option>
-                                    </select>
-                                    <div class="invalid-feedback">Select a state department.</div>
-                                </div>
-                            </div>
+                            <?php endif; ?>
                         </div>
                     </section>
 
@@ -147,8 +167,8 @@ $currentPage = 'applications';
                     </section>
 
                     <div class="profile-form-footer d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
-                        <p class="small text-secondary mb-0"><i class="bi bi-info-circle me-1" aria-hidden="true"></i>All fields and documents are required to submit your application.</p>
-                        <button type="submit" class="btn btn-profile-save btn-lg px-4">
+                        <p class="small text-secondary mb-0"><i class="bi bi-info-circle me-1" aria-hidden="true"></i>You can have one application in progress per ministry.</p>
+                        <button type="submit" class="btn btn-profile-save btn-lg px-4" <?= $directory ? '' : 'disabled' ?>>
                             <i class="bi bi-send me-2" aria-hidden="true"></i>Submit application
                         </button>
                     </div>
@@ -168,13 +188,25 @@ $currentPage = 'applications';
                                     <thead><tr><th>Ministry / Department</th><th>Submitted</th><th>Status</th></tr></thead>
                                     <tbody>
                                     <?php foreach ($applications as $application): ?>
+                                        <?php
+                                        $note = applicationProgressText($application);
+                                        $latest = $application['latest_event'];
+                                        $reasonLabel = ($latest && $latest['reason_code'] !== '') ? (lookupList('rejection_reasons')[$latest['reason_code']] ?? '') : '';
+                                        ?>
                                         <tr>
                                             <td>
                                                 <div class="fw-semibold"><?= escapeHtml($application['state_department']) ?></div>
                                                 <div class="small text-secondary"><?= escapeHtml($application['ministry']) ?></div>
                                             </td>
                                             <td class="text-nowrap"><?= escapeHtml(date('j M Y', strtotime($application['submitted_at']))) ?></td>
-                                            <td><?= statusBadge($application['status']) ?></td>
+                                            <td>
+                                                <?= statusBadge($application['status']) ?>
+                                                <?php if ($note !== ''): ?><div class="small text-secondary mt-1"><?= escapeHtml($note) ?></div><?php endif; ?>
+                                                <?php if ($application['status'] === 'rejected' && $reasonLabel !== ''): ?>
+                                                    <div class="small mt-1"><strong>Reason:</strong> <?= escapeHtml($reasonLabel) ?></div>
+                                                    <?php if ($latest['note'] !== ''): ?><div class="small text-secondary"><?= escapeHtml($latest['note']) ?></div><?php endif; ?>
+                                                <?php endif; ?>
+                                            </td>
                                         </tr>
                                     <?php endforeach; ?>
                                     </tbody>
@@ -190,7 +222,7 @@ $currentPage = 'applications';
     </div>
 
     <script>
-        window.applicationDepartments = <?= json_encode($ministries, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+        window.applicationDirectory = <?= $directoryJson ?>;
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="<?= escapeHtml(BASE_URL) ?>/assets/js/alerts.js"></script>

@@ -3,6 +3,7 @@ require_once __DIR__ . '/../../config/app.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/functions.php';
 require_once __DIR__ . '/../../includes/student.php';
+require_once __DIR__ . '/../../includes/applications.php';
 
 requireRole('STUDENT');
 
@@ -16,7 +17,7 @@ $p = $profileData['values'];
 
 $counts = getApplicationCounts($pdo, $userId);
 $total = array_sum($counts);
-$active = $total - $counts['rejected'] - $counts['withdrawn'];
+$active = $total - $counts['rejected'] - $counts['withdrawn'] - $counts['completed'];
 $reviewed = $total - $counts['submitted'] - $counts['withdrawn'];
 $recent = listApplications($pdo, $userId, 5);
 
@@ -96,7 +97,7 @@ $currentPage = 'dashboard';
                             <p class="small text-secondary mb-1">Latest application</p>
                             <p class="mb-0">
                                 <span class="fw-semibold"><?= escapeHtml($recent[0]['state_department']) ?></span>
-                                <!-- <span class="ms-2"><?= statusBadge($recent[0]['status']) ?></span> -->
+                                <span class="ms-2"><?= statusBadge($recent[0]['status']) ?></span>
                             </p>
                         </div>
                         <a class="btn btn-outline-secondary btn-sm px-3" href="<?= escapeHtml(BASE_URL) ?>/?page=applications">New application</a>

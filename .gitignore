@@ -15,8 +15,7 @@ Thumbs.db
 
 # Uploaded application documents (personal data)
 /storage/*
-!/storage/
-!/storage/.htaccess
+
 
 
 /config/secrets.php

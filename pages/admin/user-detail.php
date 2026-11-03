@@ -271,7 +271,7 @@ staffPageStart($name, 'users');
                     </div>
                     <div class="mb-3" data-scope-department hidden>
                         <label for="roleDepartment" class="form-label">State department</label>
-                        <select class="form-select" id="roleDepartment" name="department_id" data-selected="<?= (int) $target['department_id'] ?>">
+                        <select class="form-select" id="roleDepartment" name="department_id" data-selected="<?= (int) $target['department_id'] ?>" <?= $actor['scope']['all'] ? '' : 'disabled data-locked="true"' ?>>
                             <option value="">Select a ministry first</option>
                         </select>
                     </div>
