@@ -1,17 +1,15 @@
 <?php
 
 require_once __DIR__ . '/../../includes/bootstrap.php';
-require_once __DIR__ . '/../../includes/guards.php';
 require_once __DIR__ . '/../../includes/staff.php';
-require_once __DIR__ . '/../../includes/layout.php';
 
 requireAnyRole($pdo, ['ADMIN', 'HR_ADMIN']);
 
 $scope = currentStaffScope($pdo);
 
-if (!$scope['all'] && $scope['ministry_id'] === 0) {
+if (!$scope['all'] && $scope['department_id'] === 0) {
     http_response_code(403);
-    exit('Your account has no ministry assigned. Please contact the system administrator.');
+    exit('Your account has no department assigned. Please contact the system administrator.');
 }
 
 $perPage = 25;
@@ -21,7 +19,7 @@ $filters = staffFiltersFromRequest($_GET, $scope);
 $result = listStaff($pdo, $scope, $filters, $page, $perPage);
 $counts = staffStatusCounts($pdo, $scope);
 $ministries = $scope['all'] ? listMinistries($pdo, false) : [];
-$scopeName = $scope['all'] ? 'All ministries' : getMinistryName($pdo, $scope['ministry_id']);
+$scopeName = $scope['all'] ? 'All ministries' : currentHrDepartment($pdo)['department_name'];
 
 $chips = [
     ['', 'All', $counts['all']],
@@ -43,7 +41,7 @@ staffPageStart('Users', 'users');
         <p class="text-uppercase text-primary fw-semibold small mb-2"><?= escapeHtml($scopeName) ?></p>
         <h1 class="h2 fw-bold mb-2">Users</h1>
         <p class="text-secondary mb-0">
-            <?= $scope['all'] ? 'Every staff account in the system.' : 'Staff accounts in your ministry.' ?>
+            <?= $scope['all'] ? 'Every staff account in the system.' : 'Staff accounts in your department.' ?>
         </p>
     </div>
     <a class="btn btn-profile-save" href="<?= escapeHtml(urlWith('users-invite')) ?>">

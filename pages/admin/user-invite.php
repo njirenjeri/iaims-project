@@ -11,14 +11,15 @@ $creatable = creatableRoles($scope);
 
 if (!$creatable) {
     http_response_code(403);
-    exit('Your account has no ministry assigned. Please contact the system administrator.');
+    exit('Your account has no department assigned. Please contact the system administrator.');
 }
 
 $directory = directoryForScope($pdo, $scope);
 $errors = [];
 $old = [
     'first_name' => '', 'other_names' => '', 'email' => '', 'phone_number' => '',
-    'role' => '', 'ministry_id' => $scope['all'] ? 0 : $scope['ministry_id'], 'department_id' => 0,
+    'role' => '', 'ministry_id' => $scope['all'] ? 0 : $scope['ministry_id'],
+    'department_id' => $scope['all'] ? 0 : $scope['department_id'],
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -46,8 +47,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $roleCards = [
-    'HR' => 'Reviews applications and places students in their ministry.',
-    'HR_ADMIN' => 'Everything an HR officer does, plus intakes, capacity and their ministry\'s staff.',
+    'HR' => 'Reviews applications and manages placements in their department.',
+    'HR_ADMIN' => 'Everything an HR officer does, plus capacity, settings and their department\'s staff.',
     'SUPERVISOR' => 'Supervises students placed in one state department.',
     'ADMIN' => 'Manages all users, ministries and the audit log.',
 ];
@@ -143,16 +144,16 @@ staffPageStart('Invite user', 'users');
                             </option>
                         <?php endforeach; ?>
                     </select>
-                    <?php if (!$scope['all']): ?>
-                        <div class="form-text">HR admins can only invite people into their own ministry.</div>
-                    <?php endif; ?>
                     <div class="invalid-feedback">Select a ministry.</div>
                 </div>
                 <div class="col-md-6" data-scope-department hidden>
                     <label for="department_id" class="form-label">State department <span class="text-danger">*</span></label>
-                    <select class="form-select" id="department_id" name="department_id" data-selected="<?= (int) $old['department_id'] ?>">
+                    <select class="form-select" id="department_id" name="department_id" data-selected="<?= (int) $old['department_id'] ?>" <?= $scope['all'] ? '' : 'disabled data-locked="true"' ?>>
                         <option value="">Select a ministry first</option>
                     </select>
+                    <?php if (!$scope['all']): ?>
+                        <div class="form-text">HR admins can only invite people into their own department.</div>
+                    <?php endif; ?>
                     <div class="invalid-feedback">Select a state department.</div>
                 </div>
             </div>

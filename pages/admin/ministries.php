@@ -1,9 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../../includes/bootstrap.php';
-require_once __DIR__ . '/../../includes/guards.php';
 require_once __DIR__ . '/../../includes/directory.php';
-require_once __DIR__ . '/../../includes/layout.php';
 
 requireAnyRole($pdo, ['ADMIN']);
 
@@ -57,7 +55,7 @@ staffPageStart('Ministries and departments', 'ministries');
 <div class="profile-heading mb-4 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
     <div>
         <p class="text-uppercase text-primary fw-semibold small mb-2">Directory</p>
-        <h1 class="h2 fw-bold mb-2 text-capitalize">Ministries & departments</h1>
+        <h1 class="h2 fw-bold mb-2">Ministries and departments</h1>
         <p class="text-secondary mb-0">Students and staff choose from these. Archiving hides one without losing its history.</p>
     </div>
     <a class="btn btn-sm btn-outline-secondary"
@@ -122,7 +120,7 @@ staffPageStart('Ministries and departments', 'ministries');
                     <div>
                         <?= escapeHtml($department['name']) ?>
                         <?php if ($departmentArchived): ?><span class="badge text-bg-secondary ms-1">Archived</span><?php endif; ?>
-                        <div class="small text-secondary"><?= (int) $department['staff_count'] ?> supervisor(s)</div>
+                        <div class="small text-secondary"><?= (int) $department['staff_count'] ?> staff account(s)</div>
                     </div>
                     <div class="d-flex gap-2">
                         <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#renameModal"

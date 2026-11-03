@@ -1,6 +1,12 @@
 <?php
-// Sidebar for staff screens. Included by staffPageStart(), which provides $current.
+// Sidebar for staff screens. Included by staffPageStart(), which provides $current:
+// 'dashboard', 'applications', 'capacity', 'users', 'ministries' or 'audit'.
 $navItems = ['dashboard' => ['Dashboard', 'bi-speedometer2', 'dashboard']];
+
+if (userHasRole('HR') || userHasRole('HR_ADMIN')) {
+    $navItems['applications'] = ['Applications', 'bi-inboxes', 'hr-queue'];
+    $navItems['capacity'] = ['Capacity and settings', 'bi-diagram-3', 'hr-capacity'];
+}
 
 if (userHasRole('ADMIN') || userHasRole('HR_ADMIN')) {
     $navItems['users'] = ['Users', 'bi-people', 'users'];

@@ -32,7 +32,7 @@ function staffActor(PDO $pdo): array
 }
 
 // May the actor change this account? A system admin may change anyone; an HR admin only the
-// HR officers and supervisors of their own ministry.
+// HR officers and supervisors of their own department.
 function canManageStaffTarget(array $actor, array $target): bool
 {
     if ($actor['scope']['all']) {
@@ -40,8 +40,8 @@ function canManageStaffTarget(array $actor, array $target): bool
     }
 
     return in_array('HR_ADMIN', $actor['roles'], true)
-        && $actor['scope']['ministry_id'] > 0
-        && $target['ministry_id'] === $actor['scope']['ministry_id']
+        && $actor['scope']['department_id'] > 0
+        && $target['department_id'] === $actor['scope']['department_id']
         && in_array($target['role_key'], ['HR', 'SUPERVISOR'], true);
 }
 
@@ -109,7 +109,7 @@ function ensureRole(PDO $pdo, string $name): int
     return (int) $pdo->lastInsertId();
 }
 
-// Gives the account its role rows and, for HR and supervisors, the ministry or department row.
+// Gives the account its role rows and, for HR and supervisors, the department row.
 function assignStaffRole(PDO $pdo, string $userId, string $role, int $ministryId, int $departmentId, string $assignedBy): void
 {
     foreach (staffRoleNames($role) as $name) {
@@ -118,8 +118,8 @@ function assignStaffRole(PDO $pdo, string $userId, string $role, int $ministryId
     }
 
     if ($role === 'HR' || $role === 'HR_ADMIN') {
-        $pdo->prepare('INSERT INTO hr_assignments (user_id, ministry_id) VALUES (:user_id, :ministry_id)')
-            ->execute(['user_id' => $userId, 'ministry_id' => $ministryId]);
+        $pdo->prepare('INSERT INTO hr_assignments (user_id, department_id) VALUES (:user_id, :department_id)')
+            ->execute(['user_id' => $userId, 'department_id' => $departmentId]);
     } elseif ($role === 'SUPERVISOR') {
         $pdo->prepare('INSERT INTO supervisor_assignments (user_id, department_id) VALUES (:user_id, :department_id)')
             ->execute(['user_id' => $userId, 'department_id' => $departmentId]);

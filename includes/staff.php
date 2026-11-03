@@ -5,6 +5,7 @@ require_once __DIR__ . '/directory.php';
 
 // Reading staff accounts and checking the details for a new one. Changes live in staff_actions.php.
 // A "staff" user is anyone holding ADMIN, HR_ADMIN, HR or SUPERVISOR; students are not listed here.
+// HR officers, HR admins and supervisors each belong to one state department; the ministry follows from it.
 
 const STAFF_STATUSES = ['invited', 'active', 'suspended', 'archived'];
 
@@ -13,8 +14,8 @@ const STAFF_FROM = "
     LEFT JOIN staff_profiles sp ON sp.user_id = u.user_id
     LEFT JOIN hr_assignments ha ON ha.user_id = u.user_id
     LEFT JOIN supervisor_assignments sa ON sa.user_id = u.user_id
-    LEFT JOIN departments d ON d.department_id = sa.department_id
-    LEFT JOIN ministries m ON m.ministry_id = COALESCE(ha.ministry_id, d.ministry_id)
+    LEFT JOIN departments d ON d.department_id = COALESCE(ha.department_id, sa.department_id)
+    LEFT JOIN ministries m ON m.ministry_id = d.ministry_id
 ";
 
 const STAFF_SELECT = "
@@ -25,9 +26,9 @@ const STAFF_SELECT = "
            (SELECT GROUP_CONCAT(r2.name) FROM user_roles ur2
              INNER JOIN roles r2 ON r2.role_id = ur2.role_id
              WHERE ur2.user_id = u.user_id) AS role_names,
-           COALESCE(ha.ministry_id, d.ministry_id, 0) AS ministry_id,
+           COALESCE(d.ministry_id, 0) AS ministry_id,
            COALESCE(m.name, '') AS ministry_name,
-           COALESCE(sa.department_id, 0) AS department_id,
+           COALESCE(d.department_id, 0) AS department_id,
            COALESCE(d.name, '') AS department_name,
            COALESCE((SELECT MAX(s.started_at) FROM user_sessions s WHERE s.user_id = u.user_id), '') AS last_sign_in
 " . STAFF_FROM;
@@ -44,17 +45,17 @@ function creatableRoles(array $scope): array
         return ['HR', 'HR_ADMIN', 'SUPERVISOR', 'ADMIN'];
     }
 
-    return $scope['ministry_id'] > 0 ? ['HR', 'SUPERVISOR'] : [];
+    return $scope['department_id'] > 0 ? ['HR', 'SUPERVISOR'] : [];
 }
 
-// May this person even see that account? (HR admins see their own ministry only.)
+// May this person even see that account? (HR admins see their own department only.)
 function canViewStaffTarget(array $actor, array $target): bool
 {
     if ($actor['scope']['all']) {
         return true;
     }
 
-    return $actor['scope']['ministry_id'] > 0 && $target['ministry_id'] === $actor['scope']['ministry_id'];
+    return $actor['scope']['department_id'] > 0 && $target['department_id'] === $actor['scope']['department_id'];
 }
 
 /* ---------- Listing ---------- */
@@ -81,8 +82,8 @@ function staffWhere(array $scope, array $filters): array
     $params = [];
 
     if (!$scope['all']) {
-        $where[] = 'COALESCE(ha.ministry_id, d.ministry_id, 0) = :scope_ministry';
-        $params['scope_ministry'] = $scope['ministry_id'];
+        $where[] = 'COALESCE(d.department_id, 0) = :scope_department';
+        $params['scope_department'] = $scope['department_id'];
     }
 
     if (($filters['status'] ?? '') !== '') {
@@ -105,7 +106,7 @@ function staffWhere(array $scope, array $filters): array
     }
 
     if (($filters['ministry'] ?? 0) > 0) {
-        $where[] = 'COALESCE(ha.ministry_id, d.ministry_id, 0) = :ministry';
+        $where[] = 'COALESCE(d.ministry_id, 0) = :ministry';
         $params['ministry'] = $filters['ministry'];
     }
 
@@ -155,8 +156,8 @@ function staffStatusCounts(PDO $pdo, array $scope): array
     $params = [];
 
     if (!$scope['all']) {
-        $where[] = 'COALESCE(ha.ministry_id, d.ministry_id, 0) = :scope_ministry';
-        $params['scope_ministry'] = $scope['ministry_id'];
+        $where[] = 'COALESCE(d.department_id, 0) = :scope_department';
+        $params['scope_department'] = $scope['department_id'];
     }
 
     $statement = $pdo->prepare(
@@ -263,49 +264,34 @@ function staffCleanPhone(string $phone): string
 
 // Works out the ministry and department a role needs. Returns
 // [ministryId, departmentId, ministryName, departmentName, errorMessage].
+// HR officers, HR admins and supervisors all belong to one state department. The ministry
+// shown on the form is only there to narrow the list: it follows from the department.
 function resolveStaffScope(PDO $pdo, array $scope, string $role, int $ministryId, int $departmentId): array
 {
     if ($role === 'ADMIN') {
         return [0, 0, '', '', ''];
     }
 
-    // An HR admin can only act inside their own ministry, whatever the form says.
+    // An HR admin can only act inside their own department, whatever the form says.
     if (!$scope['all']) {
-        $ministryId = $scope['ministry_id'];
+        $departmentId = $scope['department_id'];
     }
 
-    if ($role === 'SUPERVISOR') {
-        $statement = $pdo->prepare(
-            "SELECT d.department_id, d.name AS department_name, d.ministry_id, m.name AS ministry_name
-             FROM departments d
-             INNER JOIN ministries m ON m.ministry_id = d.ministry_id
-             WHERE d.department_id = :id AND d.status = 'active' AND m.status = 'active'
-             LIMIT 1"
-        );
-        $statement->execute(['id' => $departmentId]);
-        $row = $statement->fetch();
-
-        if (!$row) {
-            return [0, 0, '', '', 'Select a state department.'];
-        }
-
-        if (!$scope['all'] && (int) $row['ministry_id'] !== $scope['ministry_id']) {
-            return [0, 0, '', '', 'That department is outside your ministry.'];
-        }
-
-        return [(int) $row['ministry_id'], (int) $row['department_id'], $row['ministry_name'], $row['department_name'], ''];
-    }
-
-    // HR and HR admin work for a whole ministry.
-    $statement = $pdo->prepare("SELECT ministry_id, name FROM ministries WHERE ministry_id = :id AND status = 'active' LIMIT 1");
-    $statement->execute(['id' => $ministryId]);
+    $statement = $pdo->prepare(
+        "SELECT d.department_id, d.name AS department_name, d.ministry_id, m.name AS ministry_name
+         FROM departments d
+         INNER JOIN ministries m ON m.ministry_id = d.ministry_id
+         WHERE d.department_id = :id AND d.status = 'active' AND m.status = 'active'
+         LIMIT 1"
+    );
+    $statement->execute(['id' => $departmentId]);
     $row = $statement->fetch();
 
     if (!$row) {
-        return [0, 0, '', '', 'Select a ministry.'];
+        return [0, 0, '', '', 'Select a state department.'];
     }
 
-    return [(int) $row['ministry_id'], 0, $row['name'], '', ''];
+    return [(int) $row['ministry_id'], (int) $row['department_id'], $row['ministry_name'], $row['department_name'], ''];
 }
 
 // Returns [cleanValues, errorMessages] for the invite form.

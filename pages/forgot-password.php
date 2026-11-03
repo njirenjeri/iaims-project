@@ -67,4 +67,4 @@ require __DIR__ . '/../includes/auth_top.php';
     <a href="<?= escapeHtml(BASE_URL) ?>/?page=login" class="link-gold text-decoration-none">Back to sign in</a>
 </p>
 
-<?php require __DIR__ . '/../includes/auth_bottom.php'; ?>
+<?php require __DIR__ . '/../includes/auth_bottom.php'; ?> 

@@ -47,8 +47,9 @@ function listMinistries(PDO $pdo, bool $includeArchived): array
                    (SELECT COUNT(*) FROM departments d
                      WHERE d.ministry_id = m.ministry_id AND d.status = 'active') AS department_count,
                    (SELECT COUNT(*) FROM hr_assignments ha
+                     INNER JOIN departments d3 ON d3.department_id = ha.department_id
                      INNER JOIN users u ON u.user_id = ha.user_id
-                     WHERE ha.ministry_id = m.ministry_id AND u.status IN {$live})
+                     WHERE d3.ministry_id = m.ministry_id AND u.status IN {$live})
                    + (SELECT COUNT(*) FROM supervisor_assignments sa
                        INNER JOIN departments d2 ON d2.department_id = sa.department_id
                        INNER JOIN users u2 ON u2.user_id = sa.user_id
@@ -68,7 +69,10 @@ function listDepartmentsByMinistry(PDO $pdo, bool $includeArchived): array
     $sql = "SELECT d.department_id, d.ministry_id, d.name, d.status,
                    (SELECT COUNT(*) FROM supervisor_assignments sa
                      INNER JOIN users u ON u.user_id = sa.user_id
-                     WHERE sa.department_id = d.department_id AND u.status IN {$live}) AS staff_count
+                     WHERE sa.department_id = d.department_id AND u.status IN {$live})
+                   + (SELECT COUNT(*) FROM hr_assignments ha
+                       INNER JOIN users u2 ON u2.user_id = ha.user_id
+                       WHERE ha.department_id = d.department_id AND u2.status IN {$live}) AS staff_count
             FROM departments d"
         . ($includeArchived ? '' : " WHERE d.status = 'active'")
         . ' ORDER BY d.name';
@@ -83,7 +87,7 @@ function listDepartmentsByMinistry(PDO $pdo, bool $includeArchived): array
 }
 
 // Active ministries with their active departments, shaped for dropdowns and the page's script.
-// An HR admin only gets their own ministry.
+// An HR admin only gets their own department.
 function directoryForScope(PDO $pdo, array $scope): array
 {
     $ministries = [];
@@ -104,6 +108,10 @@ function directoryForScope(PDO $pdo, array $scope): array
         }
 
         foreach ($departments as $department) {
+            if (!$scope['all'] && (int) $department['department_id'] !== $scope['department_id']) {
+                continue;
+            }
+
             $ministries[$ministryId]['departments'][] = [
                 'id' => (int) $department['department_id'],
                 'name' => $department['name'],
@@ -312,7 +320,10 @@ function getDepartment(PDO $pdo, int $departmentId): ?array
         "SELECT d.department_id, d.ministry_id, d.name, d.status, m.name AS ministry_name,
                 (SELECT COUNT(*) FROM supervisor_assignments sa
                   INNER JOIN users u ON u.user_id = sa.user_id
-                  WHERE sa.department_id = d.department_id AND u.status IN " . DIRECTORY_LIVE_STATUSES . ") AS staff_count
+                  WHERE sa.department_id = d.department_id AND u.status IN " . DIRECTORY_LIVE_STATUSES . ")
+                + (SELECT COUNT(*) FROM hr_assignments ha
+                    INNER JOIN users u2 ON u2.user_id = ha.user_id
+                    WHERE ha.department_id = d.department_id AND u2.status IN " . DIRECTORY_LIVE_STATUSES . ") AS staff_count
          FROM departments d
          INNER JOIN ministries m ON m.ministry_id = d.ministry_id
          WHERE d.department_id = :id
@@ -370,7 +381,7 @@ function renameDepartment(PDO $pdo, int $departmentId, string $name): array
     return ['success' => true, 'message' => 'Department renamed.'];
 }
 
-// $status is 'archived' or 'active'. A department with live supervisors can't be archived,
+// $status is 'archived' or 'active'. A department with live staff can't be archived,
 // and one can't be restored while its ministry is archived.
 function setDepartmentStatus(PDO $pdo, int $departmentId, string $status): array
 {
@@ -398,7 +409,7 @@ function setDepartmentStatus(PDO $pdo, int $departmentId, string $status): array
 
         return [
             'success' => false,
-            'message' => "Archive or move the {$department['staff_count']} supervisor(s) in this department first.",
+            'message' => "Archive or move the {$department['staff_count']} staff account(s) in this department first.",
         ];
     }
 

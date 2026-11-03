@@ -1,20 +1,22 @@
 <?php
 
-// Each section is stored in its own table; a row exists only once the section is fully valid.
+require_once __DIR__ . '/helpers.php';
+
+// Student profile, saved one section at a time. Applications (applying, status, the queue) are in
+// applications.php because HR needs them too.
+
+/* ================================================================== */
+/* Profile                                                             */
+/* ================================================================== */
+
+// Each section is stored in its own table; a row exists only once the section is fully valid,
+// so no column ever needs to allow NULL.
 const PROFILE_SECTIONS = [
     'personal' => [
         'table' => 'student_personal',
         'label' => 'Personal details',
-        'fields' => [
-            'first_name',
-            'other_names',
-            'identity_type',
-            'identity_number',
-            'phone_number',
-            'alternate_phone_number',
-            'nationality',
-            'gender'
-        ],
+        'fields' => ['first_name', 'other_names', 'identity_type', 'identity_number',
+                     'phone_number', 'alternate_phone_number', 'nationality', 'gender'],
     ],
     'academic' => [
         'table' => 'student_academic',
@@ -38,13 +40,7 @@ function profileDefaults(): array
         }
     }
 
-    return array_merge(
-        $defaults,
-        [
-            'identity_type' => 'national_id',
-            'nationality' => 'Kenyan'
-        ]
-    );
+    return array_merge($defaults, ['identity_type' => 'national_id', 'nationality' => 'Kenyan']);
 }
 
 // Returns ['values' => field => value, 'saved' => section => bool, 'updated_at' => ?string].
@@ -53,7 +49,7 @@ function getStudentProfile(PDO $pdo, string $userId): array
     $profile = ['values' => [], 'saved' => [], 'updated_at' => null];
 
     foreach (PROFILE_SECTIONS as $key => $section) {
-        // Table and column names come from the constant above, never from user input.
+        // Table names come from the constant above, never from user input.
         $statement = $pdo->prepare("SELECT * FROM {$section['table']} WHERE user_id = :user_id LIMIT 1");
         $statement->execute(['user_id' => $userId]);
         $row = $statement->fetch();
@@ -94,6 +90,19 @@ function sectionBadge(bool $saved): string
 function normalizePhone(string $phone): string
 {
     return preg_replace('/[\s().-]/', '', $phone);
+}
+
+// The bundled county > constituency > ward list, loaded once per request.
+function kenyaLocations(): array
+{
+    static $locations = null;
+
+    if ($locations === null) {
+        $json = file_get_contents(__DIR__ . '/../assets/data/kenya-locations.json');
+        $locations = $json !== false ? (json_decode($json, true) ?: []) : [];
+    }
+
+    return $locations;
 }
 
 // Returns [cleanValues, errorMessages] for one section.
@@ -184,12 +193,15 @@ function validateProfileSection(string $section, array $input, array $lookups): 
                 'ward' => $text('ward'),
             ];
 
-            if (!in_array($clean['county'], $lookups['counties'], true)) {
-                $errors['county'] = 'Select a valid county.';
-            }
+            $locations = kenyaLocations();
 
-            $checkText('constituency', 'Constituency', 100);
-            $checkText('ward', 'Ward', 100);
+            if (!isset($locations[$clean['county']])) {
+                $errors['county'] = 'Select a valid county.';
+            } elseif (!isset($locations[$clean['county']][$clean['constituency']])) {
+                $errors['constituency'] = 'Select a constituency in that county.';
+            } elseif (!in_array($clean['ward'], $locations[$clean['county']][$clean['constituency']], true)) {
+                $errors['ward'] = 'Select a ward in that constituency.';
+            }
             break;
 
         default:
@@ -206,8 +218,8 @@ function saveProfileSection(PDO $pdo, string $userId, string $section, array $cl
     $now = date('Y-m-d H:i:s');
 
     $columns = implode(', ', $fields);
-    $placeholders = implode(', ', array_map(static fn($field) => ':' . $field, $fields));
-    $updates = implode(', ', array_map(static fn($field) => "{$field} = VALUES({$field})", $fields));
+    $placeholders = implode(', ', array_map(static fn ($field) => ':' . $field, $fields));
+    $updates = implode(', ', array_map(static fn ($field) => "{$field} = VALUES({$field})", $fields));
 
     // VALUES() works on both MySQL and MariaDB.
     $sql = "INSERT INTO {$definition['table']} (user_id, {$columns}, created_at, updated_at)
@@ -231,212 +243,4 @@ function saveProfileSection(PDO $pdo, string $userId, string $section, array $cl
 
         return ['success' => false, 'message' => 'Could not save this section. Please try again.'];
     }
-}
-
-// Loads the bundled county > constituency > ward list once per request.
-function kenyaLocations(): array
-{
-    static $locations = null;
-
-    if ($locations === null) {
-        $json = file_get_contents(__DIR__ . '/../assets/data/kenya-locations.json');
-        $locations = $json !== false ? (json_decode($json, true) ?: []) : [];
-    }
-
-    return $locations;
-}
-
-/* ---------- Applications ---------- */
-
-function validatePdfUpload($file, string $label): ?string
-{
-    $error = is_array($file) ? ($file['error'] ?? UPLOAD_ERR_NO_FILE) : UPLOAD_ERR_NO_FILE;
-
-    if ($error === UPLOAD_ERR_NO_FILE) {
-        return "{$label} is required.";
-    }
-
-    if ($error === UPLOAD_ERR_INI_SIZE || $error === UPLOAD_ERR_FORM_SIZE) {
-        return "{$label} is larger than 10 MB.";
-    }
-
-    if ($error !== UPLOAD_ERR_OK || !is_uploaded_file($file['tmp_name'])) {
-        return "{$label} could not be uploaded. Please try again.";
-    }
-
-    if ($file['size'] <= 0 || $file['size'] > MAX_UPLOAD_BYTES) {
-        return "{$label} must be between 1 byte and 10 MB.";
-    }
-
-    // Check the real content, not the browser-supplied type or extension.
-    $mime = (new finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']);
-
-    if ($mime !== 'application/pdf') {
-        return "{$label} must be a PDF file.";
-    }
-
-    return null;
-}
-
-function createApplication(PDO $pdo, string $userId, array $profile, array $input, array $files, array $lookups): array
-{
-    $ministry = is_string($input['ministry'] ?? null) ? trim($input['ministry']) : '';
-    $department = is_string($input['state_department'] ?? null) ? trim($input['state_department']) : '';
-    $errors = [];
-
-    if (
-        !isset($lookups['ministries'][$ministry])
-        || !in_array($department, $lookups['ministries'][$ministry], true)
-    ) {
-        $errors[] = 'Select a valid ministry and state department.';
-    }
-
-    foreach ($lookups['documents'] as $type => $label) {
-        if ($message = validatePdfUpload($files[$type] ?? null, $label)) {
-            $errors[] = $message;
-        }
-    }
-
-    if ($errors) {
-        return ['success' => false, 'errors' => $errors];
-    }
-
-    // One live application per state department.
-    $duplicate = $pdo->prepare(
-        "SELECT 1 FROM applications
-         WHERE user_id = :user_id AND state_department = :department
-           AND status IN ('submitted', 'under_review') LIMIT 1"
-    );
-    $duplicate->execute(['user_id' => $userId, 'department' => $department]);
-
-    if ($duplicate->fetch()) {
-        return ['success' => false, 'errors' => ['You already have an active application to that state department.']];
-    }
-
-    $applicationId = generateUuid();
-    $directory = STORAGE_PATH . '/applications/' . $applicationId;
-    $movedFiles = [];
-    $now = date('Y-m-d H:i:s');
-
-    try {
-        $pdo->beginTransaction();
-
-        $insert = $pdo->prepare(
-            'INSERT INTO applications
-                (application_id, user_id, ministry, state_department, institution,
-                 course_name, academic_qualification, status, submitted_at, updated_at)
-             VALUES
-                (:application_id, :user_id, :ministry, :state_department, :institution,
-                 :course_name, :academic_qualification, :status, :submitted_at, :updated_at)'
-        );
-        $insert->execute([
-            'application_id' => $applicationId,
-            'user_id' => $userId,
-            'ministry' => $ministry,
-            'state_department' => $department,
-            'institution' => $profile['institution'],
-            'course_name' => $profile['course_name'],
-            'academic_qualification' => $profile['academic_qualification'],
-            'status' => 'submitted',
-            'submitted_at' => $now,
-            'updated_at' => $now,
-        ]);
-
-        if (!mkdir($directory, 0750, true) && !is_dir($directory)) {
-            throw new RuntimeException('Could not create upload directory.');
-        }
-
-        $documentInsert = $pdo->prepare(
-            'INSERT INTO application_documents
-                (application_id, document_type, original_name, stored_name, size_bytes, uploaded_at)
-             VALUES (:application_id, :document_type, :original_name, :stored_name, :size_bytes, :uploaded_at)'
-        );
-
-        foreach (array_keys($lookups['documents']) as $type) {
-            $file = $files[$type];
-            $storedName = bin2hex(random_bytes(16)) . '.pdf';
-
-            if (!move_uploaded_file($file['tmp_name'], $directory . '/' . $storedName)) {
-                throw new RuntimeException("Could not store {$type}.");
-            }
-
-            $movedFiles[] = $directory . '/' . $storedName;
-
-            $documentInsert->execute([
-                'application_id' => $applicationId,
-                'document_type' => $type,
-                'original_name' => mb_substr(preg_replace('/[^\w. ()-]/u', '_', basename($file['name'])), 0, 255),
-                'stored_name' => $storedName,
-                'size_bytes' => (int) $file['size'],
-                'uploaded_at' => $now,
-            ]);
-        }
-
-        $pdo->commit();
-
-        return ['success' => true, 'message' => 'Your application has been submitted.'];
-    } catch (Throwable $exception) {
-        if ($pdo->inTransaction()) {
-            $pdo->rollBack();
-        }
-
-        // Files are not part of the transaction, so clean them up by hand.
-        foreach ($movedFiles as $path) {
-            @unlink($path);
-        }
-        @rmdir($directory);
-
-        error_log('IAIMS application error: ' . $exception->getMessage());
-
-        return ['success' => false, 'errors' => ['Your application could not be submitted. Please try again.']];
-    }
-}
-function statusBadge(string $status): string
-{
-    $colours = [
-        'submitted' => 'primary',
-        'under_review' => 'warning',
-        'accepted' => 'success',
-        'rejected' => 'danger',
-        'withdrawn' => 'secondary',
-    ];
-
-    return sprintf(
-        '<span class="badge text-bg-%s">%s</span>',
-        $colours[$status] ?? 'secondary',
-        escapeHtml(ucwords(str_replace('_', ' ', $status)))
-    );
-}
-
-
-function listApplications(PDO $pdo, string $userId, ?int $limit = null): array
-{
-    $sql = 'SELECT application_id, ministry, state_department, status, submitted_at
-            FROM applications WHERE user_id = :user_id ORDER BY submitted_at DESC';
-
-    if ($limit !== null) {
-        $sql .= ' LIMIT ' . max(1, $limit); // int-cast, so safe to inline
-    }
-
-    $statement = $pdo->prepare($sql);
-    $statement->execute(['user_id' => $userId]);
-
-    return $statement->fetchAll();
-}
-
-
-function getApplicationCounts(PDO $pdo, string $userId): array
-{
-    $statement = $pdo->prepare(
-        'SELECT status, COUNT(*) AS total FROM applications WHERE user_id = :user_id GROUP BY status'
-    );
-    $statement->execute(['user_id' => $userId]);
-
-    $counts = ['submitted' => 0, 'under_review' => 0, 'accepted' => 0, 'rejected' => 0, 'withdrawn' => 0];
-
-    foreach ($statement->fetchAll() as $row) {
-        $counts[$row['status']] = (int) $row['total'];
-    }
-
-    return $counts;
 }
