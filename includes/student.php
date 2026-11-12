@@ -16,7 +16,7 @@ const PROFILE_SECTIONS = [
         'table' => 'student_personal',
         'label' => 'Personal details',
         'fields' => ['first_name', 'other_names', 'identity_type', 'identity_number',
-                     'phone_number', 'alternate_phone_number', 'nationality', 'gender'],
+                     'phone_number', 'alternate_phone_number', 'nationality', 'gender', 'tribe', 'disability_status','disability_details'],
     ],
     'academic' => [
         'table' => 'student_academic',
@@ -137,6 +137,9 @@ function validateProfileSection(string $section, array $input, array $lookups): 
                 'alternate_phone_number' => normalizePhone($text('alternate_phone_number')),
                 'nationality' => $text('nationality'),
                 'gender' => $text('gender'),
+                'tribe' => $text('tribe'),
+                'disability_status' => $text('disability_status'),
+                'disability_details' => $text('disability_details'),
             ];
 
             $checkText('first_name', 'First name', 100);
@@ -168,6 +171,17 @@ function validateProfileSection(string $section, array $input, array $lookups): 
 
             if (!in_array($clean['gender'], ['Male', 'Female'], true)) {
                 $errors['gender'] = 'Select a gender option.';
+                 if (!in_array($clean['tribe'], $lookups['tribes'], true)) {
+                $errors['tribe'] = 'Select a tribe from the list.';
+            }
+            
+            if (!in_array($clean['disability_status'], ['none', 'physical', 'visual', 'hearing', 'intellectual', 'multiple', 'other'], true)) {
+                $errors['disability_status'] = 'Select a valid disability status.';
+            } elseif ($clean['disability_status'] !== 'none' && $clean['disability_details'] === '') {
+                $errors['disability_details'] = 'Please explain your disability briefly.';
+            } elseif (mb_strlen($clean['disability_details']) > 500) {
+                $errors['disability_details'] = 'Explanation must not exceed 500 characters.';
+            }
             }
             break;
 
@@ -211,36 +225,3 @@ function validateProfileSection(string $section, array $input, array $lookups): 
     return [$clean, $errors];
 }
 
-function saveProfileSection(PDO $pdo, string $userId, string $section, array $clean): array
-{
-    $definition = PROFILE_SECTIONS[$section];
-    $fields = $definition['fields'];
-    $now = date('Y-m-d H:i:s');
-
-    $columns = implode(', ', $fields);
-    $placeholders = implode(', ', array_map(static fn ($field) => ':' . $field, $fields));
-    $updates = implode(', ', array_map(static fn ($field) => "{$field} = VALUES({$field})", $fields));
-
-    // VALUES() works on both MySQL and MariaDB.
-    $sql = "INSERT INTO {$definition['table']} (user_id, {$columns}, created_at, updated_at)
-            VALUES (:user_id, {$placeholders}, :created_at, :updated_at)
-            ON DUPLICATE KEY UPDATE {$updates}, updated_at = VALUES(updated_at)";
-
-    try {
-        $pdo->prepare($sql)->execute($clean + [
-            'user_id' => $userId,
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
-
-        return ['success' => true];
-    } catch (PDOException $exception) {
-        if ((int) ($exception->errorInfo[1] ?? 0) === 1062) {
-            return ['success' => false, 'message' => 'That identity number is already registered to another account.'];
-        }
-
-        error_log('IAIMS profile save error: ' . $exception->getMessage());
-
-        return ['success' => false, 'message' => 'Could not save this section. Please try again.'];
-    }
-}

@@ -58,150 +58,25 @@ document.addEventListener("DOMContentLoaded", () => {
     if (phoneInput && alternatePhoneInput) {
         phoneInput.addEventListener("input", checkAlternatePhone);
         alternatePhoneInput.addEventListener("input", checkAlternatePhone);
-        checkAlternatePhone();
+        checkAlternatePhone();   
     }
+        const pwdCheckbox = document.getElementById("is_pwd");
+    const disabilityDetailsContainer = document.getElementById("disability_details_container");
+    const disabilityDetailsInput = document.getElementById("disability_details");
 
-    /* ---------- Institution lookup (academic section) ---------- */
-
-    const institutionInput = document.getElementById("institution");
-    const institutionSuggestions = document.getElementById("institutionSuggestions");
-    const institutionLookupStatus = document.getElementById("institutionLookupStatus");
-    const schoolDirectoryUrl = "https://universities.hipolabs.com/search";
-    // A saved institution counts as already chosen.
-    let selectedInstitution = institutionInput ? institutionInput.value.trim() : "";
-    let searchTimer;
-    let activeSearch;
-
-    function closeInstitutionSuggestions() {
-        institutionSuggestions.replaceChildren();
-        institutionSuggestions.hidden = true;
-        institutionInput.setAttribute("aria-expanded", "false");
-    }
-
-    function chooseInstitution(name, message) {
-        selectedInstitution = name;
-        institutionInput.value = name;
-        institutionInput.setCustomValidity("");
-        institutionLookupStatus.textContent = message;
-        closeInstitutionSuggestions();
-        institutionInput.focus();
-    }
-
-    function buildInstitutionOption(name, index, isUnlisted) {
-        const option = document.createElement("button");
-        option.type = "button";
-        option.className = "list-group-item list-group-item-action" + (isUnlisted ? " fst-italic" : "");
-        option.id = `institution-option-${index}`;
-        option.setAttribute("role", "option");
-        option.textContent = isUnlisted ? `Use "${name}" (not in the list)` : name;
-        option.addEventListener("click", () => {
-            chooseInstitution(
-                name,
-                isUnlisted ? "Using the institution name you typed." : "Institution selected from the directory."
-            );
-        });
-        return option;
-    }
-
-    // The directory only covers universities. Colleges and institutes
-    // (common for diplomas and certificates) can use what the student typed.
-    function showInstitutionSuggestions(schools, query) {
-        institutionSuggestions.replaceChildren();
-
-        const names = [...new Set(
-            schools
-                .filter((school) => school && typeof school.name === "string")
-                .map((school) => school.name.trim())
-                .filter((name) => name.length > 0)
-        )].slice(0, 8);
-
-        names.forEach((name, index) => {
-            institutionSuggestions.append(buildInstitutionOption(name, index, false));
-        });
-        institutionSuggestions.append(buildInstitutionOption(query, names.length, true));
-
-        institutionLookupStatus.textContent = names.length
-            ? "Choose your institution from the results, or use what you typed."
-            : "No match in the directory. You can use what you typed.";
-        institutionSuggestions.hidden = false;
-        institutionInput.setAttribute("aria-expanded", "true");
-    }
-
-    function syncInstitutionValidity() {
-        institutionInput.setCustomValidity(
-            institutionInput.value.trim() !== selectedInstitution
-                ? "Choose your institution from the suggestions."
-                : ""
-        );
-    }
-
-    if (institutionInput && institutionSuggestions && institutionLookupStatus) {
-        institutionInput.addEventListener("input", () => {
-            selectedInstitution = "";
-            institutionInput.setCustomValidity("");
-            closeInstitutionSuggestions();
-            window.clearTimeout(searchTimer);
-            if (activeSearch) activeSearch.abort();
-
-            const query = institutionInput.value.trim();
-            if (query.length < 2) {
-                institutionLookupStatus.textContent = "Type at least 2 characters to search the directory.";
-                return;
+    if (pwdCheckbox && disabilityDetailsContainer && disabilityDetailsInput) {
+        // Check on page load
+        if (pwdCheckbox.checked) {
+            disabilityDetailsContainer.classList.remove("d-none");
+        }
+        // Check when the user clicks the checkbox
+        pwdCheckbox.addEventListener("change", function() {
+            if (this.checked) {
+                disabilityDetailsContainer.classList.remove("d-none"); 
+            } else {
+                disabilityDetailsContainer.classList.add("d-none"); 
+                disabilityDetailsInput.value = ""; 
             }
-
-            institutionLookupStatus.textContent = "Searching the directory…";
-            searchTimer = window.setTimeout(async () => {
-                activeSearch = new AbortController();
-                try {
-                    const url = new URL(schoolDirectoryUrl);
-                    url.searchParams.set("country", "Kenya");
-                    url.searchParams.set("name", query);
-                    const response = await fetch(url, {
-                        headers: { Accept: "application/json" },
-                        signal: activeSearch.signal,
-                    });
-                    if (!response.ok) throw new Error("The directory returned an error.");
-                    const schools = await response.json();
-                    if (institutionInput.value.trim() === query) {
-                        showInstitutionSuggestions(Array.isArray(schools) ? schools : [], query);
-                    }
-                } catch (error) {
-                    if (error.name !== "AbortError" && institutionInput.value.trim() === query) {
-                        showInstitutionSuggestions([], query);
-                        institutionLookupStatus.textContent =
-                            "Could not reach the directory. You can use what you typed.";
-                    }
-                }
-            }, 300);
-        });
-
-        institutionInput.addEventListener("keydown", (event) => {
-            if (event.key === "Escape") closeInstitutionSuggestions();
-            if (event.key === "ArrowDown" && !institutionSuggestions.hidden) {
-                event.preventDefault();
-                institutionSuggestions.querySelector("button")?.focus();
-            }
-        });
-
-        institutionSuggestions.addEventListener("keydown", (event) => {
-            const options = [...institutionSuggestions.querySelectorAll("button")];
-            const index = options.indexOf(document.activeElement);
-
-            if (event.key === "ArrowDown") {
-                event.preventDefault();
-                options[Math.min(index + 1, options.length - 1)]?.focus();
-            } else if (event.key === "ArrowUp") {
-                event.preventDefault();
-                if (index <= 0) institutionInput.focus();
-                else options[index - 1].focus();
-            } else if (event.key === "Escape") {
-                closeInstitutionSuggestions();
-                institutionInput.focus();
-            }
-        });
-
-        document.addEventListener("click", (event) => {
-            if (!event.target.closest(".institution-lookup")) closeInstitutionSuggestions();
         });
     }
 
@@ -285,10 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
     /* ---------- Submitting a section ---------- */
 
     sectionForms.forEach((form) => {
-        form.addEventListener("submit", (event) => {
-            if (institutionInput && form.contains(institutionInput)) {
-                syncInstitutionValidity();
-            }
+            form.addEventListener("submit", (event) => {
 
             if (!form.checkValidity()) {
                 event.preventDefault();
