@@ -161,14 +161,30 @@ $currentPage = 'profile';
                                     </select>
                                     <div class="invalid-feedback">Select a gender option.</div>
                                 </div>
+                                <div class="mb-3">
+                                <label for="tribe" class="form-label">Tribe <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="tribe" name="tribe" value="<?= escapeHtml($profile['tribe'] ?? '') ?>" maxlength="100" required>
+                                <div class="invalid-feedback">Enter your tribe.</div>
                             </div>
-                        </div>
+                          <div class="mb-3 form-check mt-4">
+                                <input type="checkbox" class="form-check-input" id="is_pwd" name="is_pwd" value="1" 
+                                    <?= (isset($profile['is_pwd']) && $profile['is_pwd'] == 1) ? 'checked' : '' ?>>
+                                <label class="form-check-label" for="is_pwd">Are you a Person with Disability (PWD)?</label>
+                            </div>
+
+                            <?php $isPwdChecked = isset($profile['is_pwd']) && $profile['is_pwd'] == 1; ?>
+                            <div class="mb-3 <?= $isPwdChecked ? '' : 'd-none' ?>" id="disability_details_container">
+                                <label for="disability_details" class="form-label">Please explain your disability</label>
+                                <textarea class="form-control" id="disability_details" name="disability_details" rows="3" placeholder="e.g., I use a wheelchair, or I am partially deaf..."><?= escapeHtml($profile['disability_details'] ?? '') ?></textarea>
+                            </div>
+                            
+                        </div> 
+                        
                         <div class="card-footer bg-transparent text-end py-3">
                             <button type="submit" class="btn btn-profile-save px-4"><i class="bi bi-check2-circle me-2" aria-hidden="true"></i>Save personal details</button>
                         </div>
                     </section>
                 </form>
-
                 <!-- Academic information -->
                 <form method="post" action="<?= escapeHtml(BASE_URL) ?>/?page=profile#academic" id="academic" class="profile-section-form" novalidate>
                     <input type="hidden" name="csrf_token" value="<?= escapeHtml(csrfToken()) ?>">
@@ -183,14 +199,10 @@ $currentPage = 'profile';
                         <div class="card-body p-3 p-md-4">
                             <?= $errors && $errorSection === 'academic' ? renderAlert('danger', implode(' ', $errors), 0) : '' ?>
                             <div class="row g-3">
-                                <div class="col-md-6">
+                                 <div class="col-md-6">
                                     <label for="institution" class="form-label">Student institution <span class="text-danger">*</span></label>
-                                    <div class="institution-lookup position-relative">
-                                        <input class="form-control" id="institution" name="institution" value="<?= escapeHtml($profile['institution']) ?>" maxlength="180" autocomplete="off" aria-autocomplete="list" aria-controls="institutionSuggestions" aria-expanded="false" required>
-                                        <div id="institutionSuggestions" class="institution-suggestions list-group shadow-sm" role="listbox" hidden></div>
-                                    </div>
-                                    <div class="form-text" id="institutionLookupStatus" aria-live="polite">Start typing your institution's name and choose a match.</div>
-                                    <div class="invalid-feedback">Search for your institution and choose a result.</div>
+                                    <input class="form-control" id="institution" name="institution" value="<?= escapeHtml($profile['institution']) ?>" maxlength="180" required>
+                                    <div class="invalid-feedback">Enter the name of your institution.</div>
                                 </div>
                                 <div class="col-md-6">
                                     <label for="course_name" class="form-label">Course name <span class="text-danger">*</span></label>
@@ -205,6 +217,7 @@ $currentPage = 'profile';
                                             <option value="<?= escapeHtml($qualification) ?>" <?= $profile['academic_qualification'] === $qualification ? 'selected' : '' ?>><?= escapeHtml($qualification) ?></option>
                                         <?php endforeach; ?>
                                     </select>
+
                                     <div class="invalid-feedback">Select Degree, Diploma, or Certificate.</div>
                                 </div>
                             </div>
