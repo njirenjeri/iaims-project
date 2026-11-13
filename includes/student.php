@@ -16,7 +16,7 @@ const PROFILE_SECTIONS = [
         'table' => 'student_personal',
         'label' => 'Personal details',
         'fields' => ['first_name', 'other_names', 'identity_type', 'identity_number',
-                     'phone_number', 'alternate_phone_number', 'nationality', 'gender', 'tribe', 'disability_status','disability_details'],
+                     'phone_number', 'alternate_phone_number', 'nationality', 'gender', 'tribe', 'is_pwd','disability_details'],
     ],
     'academic' => [
         'table' => 'student_academic',
@@ -138,7 +138,7 @@ function validateProfileSection(string $section, array $input, array $lookups): 
                 'nationality' => $text('nationality'),
                 'gender' => $text('gender'),
                 'tribe' => $text('tribe'),
-                'disability_status' => $text('disability_status'),
+                'is_pwd' => isset($input['is_pwd']) && $input['is_pwd'] == '1' ? 1 : 0,
                 'disability_details' => $text('disability_details'),
             ];
 
@@ -150,7 +150,6 @@ function validateProfileSection(string $section, array $input, array $lookups): 
                 $errors['identity_type'] = 'Select a valid identity document.';
             } else {
                 $pattern = $clean['identity_type'] === 'national_id' ? '/^[0-9]{7,8}$/' : '/^[A-Z0-9]{6,20}$/';
-
                 if (!preg_match($pattern, $clean['identity_number'])) {
                     $errors['identity_number'] = 'Enter a valid identity number.';
                 }
@@ -160,7 +159,6 @@ function validateProfileSection(string $section, array $input, array $lookups): 
                 $errors['phone_number'] = 'Enter a valid phone number.';
             }
 
-            // Optional: empty is fine, but if given it must be valid and different.
             if ($clean['alternate_phone_number'] !== '') {
                 if (!preg_match('/^\+?[0-9]{9,15}$/', $clean['alternate_phone_number'])) {
                     $errors['alternate_phone_number'] = 'Enter a valid alternate phone number, or leave it blank.';
@@ -171,18 +169,23 @@ function validateProfileSection(string $section, array $input, array $lookups): 
 
             if (!in_array($clean['gender'], ['Male', 'Female'], true)) {
                 $errors['gender'] = 'Select a gender option.';
-                 if (!in_array($clean['tribe'], $lookups['tribes'], true)) {
-                $errors['tribe'] = 'Select a tribe from the list.';
             }
-            
-            if (!in_array($clean['disability_status'], ['none', 'physical', 'visual', 'hearing', 'intellectual', 'multiple', 'other'], true)) {
-                $errors['disability_status'] = 'Select a valid disability status.';
-            } elseif ($clean['disability_status'] !== 'none' && $clean['disability_details'] === '') {
-                $errors['disability_details'] = 'Please explain your disability briefly.';
+
+            // Tribe validation (free text now)
+            if ($clean['tribe'] === '') {
+                $errors['tribe'] = 'Tribe is required.';
+            } elseif (mb_strlen($clean['tribe']) > 100) {
+                $errors['tribe'] = 'Tribe must not exceed 100 characters.';
+            }
+
+            // PWD validation
+            if ($clean['is_pwd'] === 1 && $clean['disability_
+            details'] === '') {
+                $errors['disability_details'] = 'Please explain your disability briefly since you selected Yes.';
             } elseif (mb_strlen($clean['disability_details']) > 500) {
                 $errors['disability_details'] = 'Explanation must not exceed 500 characters.';
             }
-            }
+            
             break;
 
         case 'academic':
@@ -224,4 +227,37 @@ function validateProfileSection(string $section, array $input, array $lookups): 
 
     return [$clean, $errors];
 }
+function saveProfileSection(PDO $pdo, string $userId, string $section, array $clean): array
+{
+    $definition = PROFILE_SECTIONS[$section];
+    $fields = $definition['fields'];
+    $now = date('Y-m-d H:i:s');
+
+    $columns = implode(', ', $fields);
+    $placeholders = implode(', ', array_map(static fn ($field) => ':' . $field, $fields));
+    $updates = implode(', ', array_map(static fn ($field) => "{$field} = VALUES({$field})", $fields));
+
+    // VALUES() works on both MySQL and MariaDB.
+    $sql = "INSERT INTO {$definition['table']} (user_id, {$columns}, created_at, updated_at)
+            VALUES (:user_id, {$placeholders}, :created_at, :updated_at)
+            ON DUPLICATE KEY UPDATE {$updates}, updated_at = VALUES(updated_at)";
+
+    try {
+        $pdo->prepare($sql)->execute($clean + [
+            'user_id' => $userId,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        return ['success' => true];
+            } catch (PDOException $exception) {
+        if ((int) ($exception->errorInfo[1] ?? 0) === 1062) {
+            return ['success' => false, 'message' => 'That identity number is already registered to another account.'];
+        }
+
+     error_log('IAIMS profile save error: ' . $exception->getMessage());
+        return ['success' => false, 'message' => 'Could not save this section. Please try again.'];
+    }
+}
+
 

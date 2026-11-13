@@ -166,28 +166,25 @@ $currentPage = 'profile';
                                 <input type="text" class="form-control" id="tribe" name="tribe" value="<?= escapeHtml($profile['tribe'] ?? '') ?>" maxlength="100" required>
                                 <div class="invalid-feedback">Enter your tribe.</div>
                             </div>
-                            <div class="mb-3 form-check">
+                          <div class="mb-3 form-check mt-4">
                                 <input type="checkbox" class="form-check-input" id="is_pwd" name="is_pwd" value="1" 
                                     <?= (isset($profile['is_pwd']) && $profile['is_pwd'] == 1) ? 'checked' : '' ?>>
                                 <label class="form-check-label" for="is_pwd">Are you a Person with Disability (PWD)?</label>
                             </div>
+
                             <?php $isPwdChecked = isset($profile['is_pwd']) && $profile['is_pwd'] == 1; ?>
                             <div class="mb-3 <?= $isPwdChecked ? '' : 'd-none' ?>" id="disability_details_container">
                                 <label for="disability_details" class="form-label">Please explain your disability</label>
                                 <textarea class="form-control" id="disability_details" name="disability_details" rows="3" placeholder="e.g., I use a wheelchair, or I am partially deaf..."><?= escapeHtml($profile['disability_details'] ?? '') ?></textarea>
                             </div>
-                        </div>
-                        <div class="mb-3 d-none" id="disability_details_container">
-                        <label for="disability_details" class="form-label">Please explain your disability</label>
-                        <textarea class="form-control" id="disability_details" name="disability_details" rows="3" placeholder="e.g., I use a wheelchair, or I am partially deaf..."></textarea>
-                    </div>
-                        </div>
+                            
+                        </div> 
+                        
                         <div class="card-footer bg-transparent text-end py-3">
                             <button type="submit" class="btn btn-profile-save px-4"><i class="bi bi-check2-circle me-2" aria-hidden="true"></i>Save personal details</button>
                         </div>
                     </section>
                 </form>
-
                 <!-- Academic information -->
                 <form method="post" action="<?= escapeHtml(BASE_URL) ?>/?page=profile#academic" id="academic" class="profile-section-form" novalidate>
                     <input type="hidden" name="csrf_token" value="<?= escapeHtml(csrfToken()) ?>">
