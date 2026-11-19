@@ -511,3 +511,225 @@ input {
     justify-content: space-between;
   }
 }
+/* ==========================================
+   1. ROOT VARIABLES (Your Custom Colors)
+   ========================================== */
+:root {
+  --director-navy: #0d2f5a;
+  --director-navy-strong: #081f3d;
+  --director-gold: #d4af37;
+  --director-gold-soft: #f8efcc;
+  --director-blue-soft: #ebf3ff;
+  --director-white: #ffffff;
+  --director-ink: #1f2a37;
+  --director-muted: #69778d;
+  --director-border: #e6ebf2;
+  --director-bg: #f3f7fc;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", Tahoma, sans-serif;
+  background-color: var(--director-bg);
+  color: var(--director-ink);
+}
+
+/* ==========================================
+   2. LAYOUT & SIDEBAR (Structural Styles)
+   ========================================== */
+.director-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar */
+.director-sidebar {
+  width: 260px;
+  background: linear-gradient(180deg, var(--director-navy) 0%, var(--director-navy-strong) 100%);
+  color: var(--director-white);
+  padding: 24px 18px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  flex-shrink: 0;
+}
+
+.brand-box {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 10px 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  margin-bottom: 18px;
+}
+
+.brand-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--director-gold), #f5d36d);
+  color: var(--director-navy-strong);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.brand-name { font-size: 1.5rem; font-weight: 700; line-height: 1.1; }
+.brand-subtitle { font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255, 255, 255, 0.8); }
+
+.director-nav { gap: 8px; margin-top: 14px; }
+.director-nav a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.82);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+.director-nav a:hover, .director-nav a.active {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--director-white);
+  border-left: 3px solid var(--director-gold);
+  padding-left: 11px;
+}
+
+/* Main Content Area */
+.director-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.director-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 30px;
+  background: var(--director-white);
+  border-bottom: 1px solid var(--director-border);
+}
+
+.eyebrow { color: var(--director-navy); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.director-topbar h1 { margin: 5px 0 0; font-size: 1.8rem; color: var(--director-ink); font-weight: 700; }
+
+.user-chip {
+  background: var(--director-white);
+  border: 1px solid var(--director-border);
+  border-radius: 999px;
+  padding: 8px 16px;
+  color: var(--director-navy);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.director-content { padding: 25px 30px; flex: 1; }
+
+/* ==========================================
+   3. CUSTOM BOOTSTRAP COMPONENTS (Cards & Panels)
+   ========================================== */
+
+/* Top Stat Cards */
+.stat-mini-card {
+  background: var(--director-white);
+  border-radius: 12px;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--director-border);
+  height: 100%;
+}
+.stat-mini-icon {
+  font-size: 1.6rem;
+  margin-right: 12px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--director-blue-soft);
+}
+.stat-mini-value { font-size: 1.4rem; font-weight: 700; margin-bottom: 0; line-height: 1.1; color: var(--director-navy); }
+.stat-mini-label { font-size: 0.75rem; color: var(--director-muted); margin-bottom: 2px; white-space: nowrap; }
+
+/* Flat Panels (White Boxes) */
+.flat-panel {
+  background: var(--director-white);
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid var(--director-border);
+  margin-bottom: 20px;
+  height: 100%;
+}
+.flat-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  border-bottom: 1px solid var(--director-border);
+  padding-bottom: 12px;
+}
+.flat-panel-header h3 { margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--director-navy); }
+
+/* Tables (Bootstrap Overrides) */
+.table-clean th {
+  font-size: 0.8rem;
+  color: var(--director-muted);
+  border-bottom: 2px solid var(--director-border);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.table-clean td {
+  font-size: 0.9rem;
+  vertical-align: middle;
+  border-color: var(--director-border);
+  padding: 12px 8px;
+}
+
+/* Activity Feed */
+.activity-feed-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--director-border);
+}
+.activity-feed-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.activity-feed-icon { margin-right: 15px; font-size: 1.2rem; margin-top: 2px; }
+.activity-feed-text { font-size: 0.85rem; font-weight: 600; color: var(--director-ink); margin: 0 0 3px 0; }
+.activity-feed-time { font-size: 0.75rem; color: var(--director-muted); }
+
+/* Live Banner */
+.live-banner {
+  background: var(--director-white);
+  border-radius: 12px;
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  border: 1px solid var(--director-border);
+  border-left: 4px solid var(--director-navy);
+}
+
+/* Chart Fixes */
+.chart-container {
+  position: relative;
+  width: 100%;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+  .director-shell { flex-direction: column; }
+  .director-sidebar { width: 100%; height: auto; position: static; }
+  .director-topbar { flex-direction: column; align-items: flex-start; gap: 12px; }
+}
